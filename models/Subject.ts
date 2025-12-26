@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface SubjectDocument extends Document{
+export interface SubjectDocument extends Document{
+    userId:mongoose.Types.ObjectId ,
     subjectName:string,
     dppCount:number,
     classCount:number,
@@ -8,6 +9,10 @@ interface SubjectDocument extends Document{
 }
 
 const SubjectShema:Schema<SubjectDocument> = new Schema({
+    userId:{
+        type:Schema.Types.ObjectId,
+        required:true
+    },
     subjectName:{
         type:String,
         required:true,
@@ -27,5 +32,4 @@ const SubjectShema:Schema<SubjectDocument> = new Schema({
 },{timestamps:true})
 
 const Subject = mongoose.models.Subject || mongoose.model<SubjectDocument>("Subject", SubjectShema)
-
 export default Subject;

@@ -1,6 +1,5 @@
 import { HttpStatusCode, HttpStatusText } from "@/enums/Reponse";
-import { SignInInterface } from "@/interface/Auth/validations";
-import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse";
+import { AuthResponseInterface, SignInInterface } from "@/interface/Auth/validations";
 import { TokenInterface } from "@/interface/TokenPayload/toknePayload";
 import { mongoconnect } from "@/lib/mongodb";
 import User from "@/models/User";
@@ -8,7 +7,7 @@ import { signinValidaton } from "@/zod/authValidation";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from 'jsonwebtoken'
-export async function POST(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
+export async function POST(req:NextRequest):Promise<NextResponse<AuthResponseInterface>> {
     const cookie = await cookies()
     try {``
         const body:SignInInterface = await req.json()
