@@ -7,6 +7,7 @@ import { signinValidaton } from "@/zod/authValidation";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from 'jsonwebtoken'
+import bcrypt from "bcryptjs";
 export async function POST(req:NextRequest):Promise<NextResponse<AuthResponseInterface>> {
     const cookie = await cookies()
     try {``
@@ -65,8 +66,9 @@ export async function POST(req:NextRequest):Promise<NextResponse<AuthResponseInt
                 status:409
             })
         }
+        const hashedPassword = await bcrypt.hash(body.password,10)
 
-        const user = await User.create(body)
+        const user = await User.create({...body, password: hashedPassword})
 
         if(!user){
             return NextResponse.json({

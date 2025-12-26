@@ -3,10 +3,15 @@ import mongoose, { Schema } from "mongoose";
 interface UserDocument {
     email:string,
     password:string,
-    token:string
+    token:string,
+    name:string
 }
 
 const UserSchemaDocument :Schema<UserDocument> = new Schema({
+    name:{
+        type:String,
+        required:true
+    },
     email:{
         type:String,
         required:true
