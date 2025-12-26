@@ -44,7 +44,7 @@ export default function SignInPage() {
 
       // Store token
       if (data.token) {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string, data.token);
       }
 
       setSuccess(true);

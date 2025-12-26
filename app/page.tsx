@@ -1,4 +1,6 @@
 "use client"
+import { SubjectInterface } from '@/interface/Subject/Subject';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 export default function SubjectPage() {
@@ -8,7 +10,7 @@ export default function SubjectPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-
+  const router  = useRouter()
   // Fetch subjects on component mount
   useEffect(() => {
     fetchSubjects();
@@ -19,11 +21,12 @@ export default function SubjectPage() {
     setError('');
     
     try {
-      const token = localStorage.getItem('token') || document.cookie
-        .split('; ')
-        .find(row => row.startsWith('auth_token='))
-        ?.split('=')[1];
+      const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string) || ""
 
+      if(!token){
+        router.replace('/signin')
+        return 
+      }
       const response = await fetch('/api/v1/subject', {
         method: 'GET',
         headers: {
@@ -33,14 +36,14 @@ export default function SubjectPage() {
       });
 
       const data = await response.json();
-
+      console.log(data)
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to fetch subjects');
       }
 
       setSubjects(data.subjects || []);
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     } finally {
       setIsLoading(false);
     }
@@ -56,11 +59,12 @@ export default function SubjectPage() {
     setError('');
 
     try {
-      const token = localStorage.getItem('token') || document.cookie
-        .split('; ')
-        .find(row => row.startsWith('auth_token='))
-        ?.split('=')[1];
+      const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string) 
 
+      if(!token){
+        router.replace('/signin')
+        return 
+      }
       const response = await fetch('/api/v1/subject', {
         method: 'POST',
         headers: {
@@ -80,20 +84,17 @@ export default function SubjectPage() {
       setShowAddModal(false);
       fetchSubjects();
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     } finally {
       setIsAdding(false);
     }
   };
 
-  const handleIncrement = async (subjectId, type) => {
+  const handleIncrement = async (subjectId:string, type:string) => {
     try {
-      const token = localStorage.getItem('token') || document.cookie
-        .split('; ')
-        .find(row => row.startsWith('auth_token='))
-        ?.split('=')[1];
+      const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
 
-      const response = await fetch(`/api/v1/subject?_id=${subjectId}&type=${type}&action=increment`, {
+      const response = await fetch(`/api/v1/incAndDcs?_id=${subjectId}&type=${type}&action=increment`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -104,23 +105,20 @@ export default function SubjectPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to update count');
+        setError(data.error || 'Failed to update count');
       }
 
       fetchSubjects();
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     }
   };
 
-  const handleDecrement = async (subjectId, type) => {
+  const handleDecrement = async (subjectId:string, type:string) => {
     try {
-      const token = localStorage.getItem('token') || document.cookie
-        .split('; ')
-        .find(row => row.startsWith('auth_token='))
-        ?.split('=')[1];
+      const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
-      const response = await fetch(`/api/v1/subject?_id=${subjectId}&type=${type}&action=decrement`, {
+      const response = await fetch(`/api/v1/incAndDcs?_id=${subjectId}&type=${type}&action=decrement`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -131,12 +129,12 @@ export default function SubjectPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to update count');
+        setError(data.error || 'Failed to update count');
       }
 
       fetchSubjects();
     } catch (err) {
-      setError(err.message);
+      setError((err as Error).message);
     }
   };
 
@@ -175,7 +173,7 @@ export default function SubjectPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {subjects.map((subject) => (
+            {subjects.map((subject :SubjectInterface ) => (
               <div key={subject._id} className="bg-zinc-800 rounded-lg p-6 border border-zinc-700">
                 <h3 className="text-xl font-semibold mb-4" style={{ color: '#e0e0e0' }}>
                   {subject.subjectName}
@@ -271,7 +269,7 @@ export default function SubjectPage() {
   );
 }
 
-function CounterRow({ label, count, onIncrement, onDecrement }) {
+function CounterRow({ label , count, onIncrement, onDecrement }:{label:string, count:number,onIncrement:()=> void ,onDecrement:()=> void }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-zinc-400">{label}</span>

@@ -1,18 +1,19 @@
 import { HttpStatusCode, HttpStatusText } from "@/enums/Reponse";
 import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse";
-import { AddSubjectInterface } from "@/interface/Subject/Subject";
+import { AddSubjectInterface, GetSubjectInterface } from "@/interface/Subject/Subject";
 import { mongoconnect } from "@/lib/mongodb";
 import Subject from "@/models/Subject";
 import { AddSubject } from "@/zod/subjectValidations";
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken"
 import { TokenInterface } from "@/interface/TokenPayload/toknePayload";
+import mongoose from "mongoose";
 
 export async function POST(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
     try {
     // token authenctication part 
     const header = req.headers
-    const token = header.get("autherization")?.split(' ')[1];
+    const token = header.get("authorization")?.split(' ')[1];
     
     if(!token){
         return NextResponse.json({
@@ -182,3 +183,59 @@ export async function DELETE(req:NextRequest):Promise<NextResponse<StanderedResp
 
 }
 
+export async function GET(req: NextRequest): Promise<NextResponse<StanderedResponse>> {
+  try {
+    const header = req.headers;
+    // Fix: Check both "authorization" and "Authorization" (case-insensitive)
+    const authHeader = header.get("authorization") || header.get("Authorization");
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return NextResponse.json({
+        status: HttpStatusCode.UNAUTHORIZED,
+        success: false,
+        error: HttpStatusText.UNAUTHORIZED
+      }, { status: HttpStatusCode.UNAUTHORIZED });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET as string) as TokenInterface;
+    } catch (error) {
+      return NextResponse.json({
+        success: false,
+        status: HttpStatusCode.UNAUTHORIZED,
+        error: "Invalid or expired token",
+        message: (error as Error).message
+      }, { status: HttpStatusCode.UNAUTHORIZED });
+    }
+
+    const isConnected = await mongoconnect();
+    if (!isConnected) {
+      return NextResponse.json({
+        status: HttpStatusCode.INTERNAL_SERVER_ERROR,
+        success: false,
+        error: HttpStatusText.INTERNAL_SERVER_ERROR,
+        message: "Failed to connect mongodb."
+      }, { status: HttpStatusCode.INTERNAL_SERVER_ERROR });
+    }
+
+    const subjects = await Subject.find({
+      userId: new mongoose.Types.ObjectId(decoded._id)
+    }).sort({ createdAt: -1 });
+
+    return NextResponse.json({
+      status: HttpStatusCode.OK,
+      success: true,
+      subjects
+    });
+
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({
+      status: HttpStatusCode.INTERNAL_SERVER_ERROR,
+      success: false,
+      error: HttpStatusText.INTERNAL_SERVER_ERROR
+    }, { status: HttpStatusCode.INTERNAL_SERVER_ERROR });
+  }
+}

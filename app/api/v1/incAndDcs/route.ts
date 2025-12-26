@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse<StanderedRes
   try {
     const header = req.headers;
     const searchParams = req.nextUrl.searchParams;
-    const token = header.get("autherization")?.split(' ')[1];
+    const token = header.get("authorization")?.split(' ')[1];
     const _id = searchParams.get("_id");
     const type = searchParams.get("type");
     const action = searchParams.get("action");
