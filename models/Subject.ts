@@ -6,6 +6,8 @@ export interface SubjectDocument extends Document{
     dppCount:number,
     classCount:number,
     pyqCount:number,
+    bookCount:number,
+    chatGptCount:number
 }
 
 const SubjectShema:Schema<SubjectDocument> = new Schema({
@@ -28,7 +30,15 @@ const SubjectShema:Schema<SubjectDocument> = new Schema({
     pyqCount:{
         type:Number,
         default:0
-    }
+    },
+    chatGptCount:{
+        type:Number,
+        default:0
+    },
+    bookCount:{
+        type:Number,
+        default:0
+    },
 },{timestamps:true})
 
 const Subject = mongoose.models.Subject || mongoose.model<SubjectDocument>("Subject", SubjectShema)
