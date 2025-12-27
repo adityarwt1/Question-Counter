@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Question Counger",
+  title: "Question Counter",
   description: "Question Counter - Aditya Rawat",
 };
 
