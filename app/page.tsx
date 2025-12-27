@@ -1,5 +1,6 @@
 "use client"
 import { GetSubjectInterface, SubjectInterface } from '@/interface/Subject/Subject';
+import { SubjectAndQuestionCount } from '@/interface/Summary/totalQuestion';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -10,13 +11,41 @@ export default function SubjectPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [summaryData , setSummaryData] = useState<SubjectAndQuestionCount>()
+  const [totalQuestion, setTotalQuestions] = useState<number>(0)
   const router = useRouter();
 
   // Fetch subjects on component mount
   useEffect(() => {
     fetchSubjects();
+    handleTotalQuestion()
   }, []);
 
+   const handleTotalQuestion = async () => {
+    try {
+      const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
+
+      if (!token) {
+        router.replace('/signin')
+        return;
+      }
+      const response = await fetch("/api/v1/questionCount", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.subjects && data.subjects[0]) {
+        setSummaryData(data.subjects[0].subjects || []);
+        setTotalQuestions(data.subjects[0].total[0]?.totalCount || 0);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const fetchSubjects = async () => {
     setIsLoading(true);
     setError('');
@@ -100,7 +129,7 @@ export default function SubjectPage() {
           : subject
       )
     );
-
+    setTotalQuestions(prev => prev +1)
     try {
       const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
@@ -128,6 +157,7 @@ export default function SubjectPage() {
               : subject
           )
         );
+        setTotalQuestions(prev => prev -1)
         setError(data.error || 'Failed to update count');
       }
     } catch (err) {
@@ -157,8 +187,8 @@ export default function SubjectPage() {
           ? { ...subject, [type]: subject[type] - 1 }
           : subject
       )
-    );
-
+    );  
+    setTotalQuestions(prev => prev -1)
     try {
       const token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string);
 
@@ -186,6 +216,7 @@ export default function SubjectPage() {
               : subject
           )
         );
+        setTotalQuestions(prev => prev +1)
         setError(data.error || 'Failed to update count');
       }
     } catch (err) {
@@ -216,7 +247,7 @@ export default function SubjectPage() {
             + Add Subject
           </button>
         </div>
-
+      <div className='w-full flex justify-center items-center  py-7'><div className='text-2xl font-mono '>Total Questions: {totalQuestion}</div></div>
         {error && (
           <div className="bg-red-900/30 border border-red-800 rounded-lg p-4 mb-6">
             <p className="text-red-400">{error}</p>
