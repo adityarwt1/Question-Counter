@@ -216,7 +216,7 @@ export default function SubjectPage() {
   </div>
 
         <h1 className="text-3xl font-bold text-center text-zinc-200 mb-6">
-          Total Questions: {totalQuestion}
+          Total Questions: {totalQuestion}/{Number(15000).toLocaleString()}
         </h1>
 
     {showAddModal && (
