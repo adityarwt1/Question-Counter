@@ -19,7 +19,6 @@ export default function SubjectPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
-
   const router = useRouter();
 
   useEffect(() => {
@@ -40,6 +39,9 @@ export default function SubjectPage() {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if(res.status === 401) {
+      return router.replace("/signin");
+    }
     const data = await res.json();
 
     setSummaryData(data.subjects[0].subjects || []);
@@ -61,6 +63,9 @@ export default function SubjectPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      if(res.status === 401) {
+        return router.replace("/signin");
+      }
       const data = await res.json();
       setSubjects(data.subjects || []);
     } finally {
@@ -184,7 +189,10 @@ export default function SubjectPage() {
       },
       body: JSON.stringify({ subjectName: newSubjectName }),
     });
-
+  
+    if(res.status === 401) {
+      return router.replace("/signin");
+    }
     const data = await res.json();
     if (!data.success) throw new Error();
 
