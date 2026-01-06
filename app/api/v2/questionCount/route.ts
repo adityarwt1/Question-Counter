@@ -60,33 +60,56 @@ export async function GET(req:NextRequest) :Promise<NextResponse<GetSubjectInter
         }
 
         const subjects = await Subject.aggregate([
+            { 
+                $match: { 
+                userId: new mongoose.Types.ObjectId(decodedToken._id) 
+                } 
+            },
+            { 
+                $project: { 
+                _id: 1, 
+                subjectName: 1, 
+                dppCount: 1,
+                classCount: 1,
+                pyqCount: 1,
+                bookCount: 1,
+                chatGptCount: 1,
+                totalcount: { 
+                    $add: [ 
+                    "$dppCount", 
+                    "$classCount", 
+                    "$pyqCount", 
+                    "$bookCount", 
+                    "$chatGptCount" 
+                    ] 
+                }
+                }
+            },
             {
-                $match: {
-                    userId: new mongoose.Types.ObjectId(decodedToken._id)
+                $group: {
+                _id: null,
+                subjects: { $push: "$$ROOT" },
+                overallCount: { 
+                    $sum: { 
+                    $add: [ 
+                        "$dppCount", 
+                        "$classCount", 
+                        "$pyqCount", 
+                        "$bookCount", 
+                        "$chatGptCount" 
+                    ] 
+                    } 
+                }
                 }
             },
             {
                 $project: {
-                    _id:1,
-                    subjectName: 1,
-                    dppcount:1,
-                    classCount:1,
-                    pyqCount:1,
-                    bookCount:1,
-                    chatGptCount:1,
-                    totalcount: {
-                        $add: [
-                            "$dppCount",
-                            "$classCount",
-                            "$pyqCount",
-                            "$bookCount",
-                            "$chatGptCount"
-                        ]
-                    }
+                _id: 0,
+                subjects: 1,
+                overallCount: 1
+                }
             }
-            },
-        ])
-
+            ]);
         return NextResponse.json({
             success:true,
             status:HttpStatusCode.OK,
