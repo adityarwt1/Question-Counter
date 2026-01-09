@@ -40,9 +40,9 @@ export async function PATH(req:NextRequest):Promise<NextResponse<StanderedRespon
         }
         const body = await req.json();
         
-        const { increment, decrement , count} = body;
+        const {  count , type} = body;
 
-        if(!increment && !decrement && !count || !_id){
+        if( !count || !_id || !type){
             return NextResponse.json({
                 status:HttpStatusCode.BAD_REQUEST,
                 success:false,
@@ -71,7 +71,7 @@ export async function PATH(req:NextRequest):Promise<NextResponse<StanderedRespon
             { _id: _id},
             {
                 $inc: {
-                    questionCount: decrement ? -decrement : increment ? increment : 0,
+                    [type]: count > 0 ? count : -count,
                 }
             },
             { new: true }
