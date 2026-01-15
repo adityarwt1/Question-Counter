@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import jwt from 'jsonwebtoken'
 import { mongoconnect } from "@/lib/mongodb";
 import Subject from "@/models/Subject";
-export async function PATH(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
+export async function POST(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
 
     try {
         const searchParams = req.nextUrl.searchParams;
