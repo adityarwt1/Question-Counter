@@ -1,5 +1,5 @@
 "use client"
-import NavigateButton from '@/components/Lags/NavigateButton'
+import NavigateButton from '@/components/Lags/NavigateButtonSubject'
 import { LagResponoseData, LagResponseDataInterface } from '@/interface/Lags/lagresponse'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -21,6 +21,10 @@ const LagPage = ()=>{
                     "Authorization":`Bearer ${token}`
                 }
             })
+
+            if(response.status === 401){
+                return router.replace('/signin')
+            }
             const responseData :LagResponoseData = await response.json()
             console.log(responseData.data)
             setLagData(responseData.data)
