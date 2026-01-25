@@ -105,3 +105,45 @@ export async function POST(req:NextRequest) :Promise<NextResponse<StanderedRespo
     }
     
 }
+
+export async function PATCH(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
+    try {
+        const authentication = await VerifyToken(req)
+
+        if(!authentication.isVerified){
+            return Unauthorized()
+        }
+
+        const {_id, subjectName } = await req.json()
+
+        if(!_id || !subjectName){
+            return BadRequest("Field not provided properly!")
+        }
+
+        const isConnected = await mongoconnect()
+
+        if(!isConnected){
+            return FailedToConnectDatabse()
+        }
+
+        const data = await Lags.findOneAndUpdate({
+            _id
+        },{
+            subjectName
+        },{
+            new:true
+        })
+
+        if(!data){
+            return UnExpectedError("Failed to update!")
+        }
+        return NextResponse.json({
+            status:HttpStatusCode.OK,
+            success:true,
+        })
+    } catch (error) {
+        console.log(error)
+        return InternalServerIssue(error)
+    }
+}
+
