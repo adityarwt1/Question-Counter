@@ -1,0 +1,87 @@
+"use server"
+import { HttpStatusCode, HttpStatusText } from "@/enums/Reponse"
+import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse"
+import { TokenInterface } from "@/interface/TokenPayload/toknePayload"
+import { NextRequest, NextResponse } from "next/server"
+import jwt from "jsonwebtoken"
+
+export const BadRequest  =async (message?:string )=> NextResponse.json<StanderedResponse>({
+    success:false,
+    status:HttpStatusCode.BAD_REQUEST,
+    error:HttpStatusText.BAD_REQUEST,
+    message
+})
+export const UnExpectedError  =async (message?:string )=> NextResponse.json<StanderedResponse>({
+    success:false,
+    status:HttpStatusCode.BAD_REQUEST,
+    error:HttpStatusText.BAD_REQUEST,
+    message
+})
+
+export const InternalServerIssue =async (error?:Error | unknown)=> NextResponse.json<StanderedResponse>({
+    message:(error as Error)?.message as string || "Internal server issue!",
+    status:HttpStatusCode.INTERNAL_SERVER_ERROR,
+    error:HttpStatusText.INTERNAL_SERVER_ERROR,
+    success:false
+})
+
+export const TestingTest = async (message:string)=> NextResponse.json({
+    message
+})
+
+
+export const Unauthorized = async ()=> NextResponse.json<StanderedResponse>({
+    status:HttpStatusCode.UNAUTHORIZED,
+    success:false,
+    error:HttpStatusText.UNAUTHORIZED,
+    message:"User aunthorized!"
+})
+
+export const FailedToConnectDatabse = async ()=> NextResponse.json<StanderedResponse>({
+    status:HttpStatusCode.INTERNAL_SERVER_ERROR,
+    success:false,
+    error:HttpStatusText.INTERNAL_SERVER_ERROR,
+    message:"Failed to connect database!"
+})
+
+
+export const VerifyToken = async (req:NextRequest) : Promise<{
+    isVerified:boolean,
+    user?:TokenInterface
+}>=>{
+    try {
+        const header = req.headers;
+        const token = header.get("Authorization")?.split(" ")[1];
+        console.log("token " , token)
+        if(!token){
+            return {
+                isVerified:false
+            };
+        }
+        let user:TokenInterface;
+        try {
+            user = jwt.verify(token,process.env.JWT_SECRET as string) as TokenInterface 
+        } catch (error) {
+            console.log(error)
+            return {
+                isVerified:false
+            }
+        }
+
+        if(!user){
+            return {
+                isVerified:false
+            }
+        }
+        return {
+            isVerified:true,
+            user
+        }
+        
+    } catch (error) {
+        console.log(error)
+        return {
+            isVerified:false
+        }
+    }   
+}
