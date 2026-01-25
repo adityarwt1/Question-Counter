@@ -147,3 +147,37 @@ export async function PATCH(req:NextRequest):Promise<NextResponse<StanderedRespo
     }
 }
 
+export async function DELETE(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
+    try {
+        const authenticatedData = await VerifyToken(req)
+
+        if(!authenticatedData.isVerified ){
+            return Unauthorized()
+        };
+        const {_id} = await req.json()
+
+        if(!_id){
+            return BadRequest("_id not provided")
+        }
+        const isConnected = await mongoconnect()
+
+        if(!isConnected){
+            return FailedToConnectDatabse()
+        }
+        try {
+        await Lags.findOneAndDelete({
+            _id
+        })
+        } catch (error) {
+            return UnExpectedError("Failed to delete!")
+        }
+        
+        return NextResponse.json({
+            status:HttpStatusCode.OK,
+            success:true
+        })
+    } catch (error) {
+        console.log(error)
+        return InternalServerIssue(error)
+    }
+}
