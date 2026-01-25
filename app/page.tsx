@@ -224,8 +224,21 @@ export default function SubjectPage() {
   </div>
 
         <h1 className="text-3xl font-bold text-center text-zinc-200 mb-6">
-          Total Questions: {Number(totalQuestion).toLocaleString()}/{Number(15000).toLocaleString()}
+          Total Questions: {Number(totalQuestion).toLocaleString()}/15,000 ({((Number(totalQuestion) / 15000) * 100).toFixed(1)}%)
         </h1>
+
+        {/* Overall Progress Bar */}
+        <div className="max-w-md mx-auto mb-8">
+          <div className="w-full bg-zinc-700 rounded-full h-3">
+            <div
+              className="bg-[#e0e0e0] h-3 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min((Number(totalQuestion) / 15000) * 100, 100)}%` }}
+            ></div>
+          </div>
+          <div className="text-center text-zinc-300 text-sm mt-2">
+            Overall Progress: {((Number(totalQuestion) / 15000) * 100).toFixed(1)}%
+          </div>
+        </div>
 
     {showAddModal && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
