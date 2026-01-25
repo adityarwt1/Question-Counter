@@ -10,6 +10,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-primary-bg: #18181B;
+  --color-card-bg: #27272A;
+  --color-text: #e0e0e0;
+  --color-button-bg: #e0e0e0;
+  --color-button-text: black;
 }
 
 @media (prefers-color-scheme: dark) {

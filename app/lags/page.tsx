@@ -13,9 +13,11 @@ const LagPage = ()=>{
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editingName, setEditingName] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
 
-    const fetchData = async (currentPage: number = 1) => {
+    const fetchData = async (currentPage: number = 1, isInitial: boolean = false) => {
+        if (isInitial) setIsInitialLoading(true)
         let token;
         if(typeof window !== "undefined"){
             token = localStorage.getItem(process.env.COOKIE_NAME as string)
@@ -32,12 +34,13 @@ const LagPage = ()=>{
         }
         const responseData :LagResponoseData = await response.json()
         setLagData(responseData.data)
+        if (isInitial) setIsInitialLoading(false)
         // Assuming total count is not returned, for simplicity, assume 10 pages or something. Actually, backend doesn't return total, so pagination might be limited.
         // For now, just set page.
     }
 
     useEffect(()=>{
-        fetchData(page)
+        fetchData(page, true)
     },[page])
 
     const handleAddSubject = async () => {
@@ -132,13 +135,13 @@ const LagPage = ()=>{
     }
 
     return (
-        <div className='w-full bg-[#18181B] min-h-screen flex flex-col items-center p-4'>
+        <div className='w-full bg-primary-bg min-h-screen flex flex-col items-center p-4'>
             <div className='w-full max-w-4xl'>
                 <div className='flex justify-between items-center mb-4'>
-                    <h1 className='text-[#e0e0e0] text-2xl font-bold'>Subjects</h1>
+                    <h1 className='text-text text-2xl font-bold'>Subjects</h1>
                     <button
                         onClick={() => setIsAdding(!isAdding)}
-                        className='bg-[#e0e0e0] text-black px-4 py-2 rounded flex items-center gap-2'
+                        className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
                     >
                         <Plus size={16} />
                         Add Subject
@@ -146,25 +149,25 @@ const LagPage = ()=>{
                 </div>
 
                 {isAdding && (
-                    <div className='bg-[#27272A] p-4 rounded mb-4'>
+                    <div className='bg-card-bg p-4 rounded mb-4'>
                         <input
                             type='text'
                             value={newSubjectName}
                             onChange={(e) => setNewSubjectName(e.target.value)}
                             placeholder='Enter subject name'
-                            className='w-full p-2 bg-[#18181B] text-[#e0e0e0] border border-[#e0e0e0] rounded'
+                            className='w-full p-2 bg-primary-bg text-text border border-text rounded'
                         />
                         <div className='flex gap-2 mt-2'>
                             <button
                                 onClick={handleAddSubject}
                                 disabled={isLoading}
-                                className='bg-[#e0e0e0] text-black px-4 py-2 rounded'
+                                className='bg-button-bg text-button-text px-4 py-2 rounded'
                             >
                                 Add
                             </button>
                             <button
                                 onClick={() => setIsAdding(false)}
-                                className='bg-[#e0e0e0] text-black px-4 py-2 rounded'
+                                className='bg-button-bg text-button-text px-4 py-2 rounded'
                             >
                                 Cancel
                             </button>
@@ -173,60 +176,78 @@ const LagPage = ()=>{
                 )}
 
                 <div className='grid gap-4'>
-                    {lagData?.map((subject) => {
-                        const idString = typeof subject._id === "string" ? subject._id : subject._id.toString();
-                        return (
-                            <div key={idString} className='bg-[#27272A] p-4 rounded flex items-center justify-between'>
-                                {editingId === idString ? (
-                                    <div className='flex-1 flex items-center gap-2'>
-                                        <input
-                                            type='text'
-                                            value={editingName}
-                                            onChange={(e) => setEditingName(e.target.value)}
-                                            className='flex-1 p-2 bg-[#18181B] text-[#e0e0e0] border border-[#e0e0e0] rounded'
-                                        />
-                                        <button
-                                            onClick={() => handleEditSubject(idString)}
-                                            disabled={isLoading}
-                                            className='bg-[#e0e0e0] text-black p-2 rounded'
-                                        >
-                                            <Save size={16} />
-                                        </button>
-                                        <button
-                                            onClick={cancelEdit}
-                                            className='bg-[#e0e0e0] text-black p-2 rounded'
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <button
-                                            onClick={() => (router as any).push(`/lags/${idString}`)}
-                                            className='flex-1 text-left text-[#e0e0e0] hover:text-white'
-                                        >
-                                            {subject.subjectName}
-                                        </button>
-                                        <div className='flex gap-2'>
+                    {isInitialLoading ? (
+                        <div className='text-center text-text py-8'>
+                            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
+                            Loading subjects...
+                        </div>
+                    ) : lagData && lagData.length > 0 ? (
+                        lagData.map((subject) => {
+                            const idString = typeof subject._id === "string" ? subject._id : subject._id.toString();
+                            return (
+                                <div key={idString} className='bg-card-bg p-4 rounded flex items-center justify-between cursor-pointer hover:bg-[#3a3a3a] transition-colors'>
+                                    {editingId === idString ? (
+                                        <div className='flex-1 flex items-center gap-2'>
+                                            <input
+                                                type='text'
+                                                value={editingName}
+                                                onChange={(e) => setEditingName(e.target.value)}
+                                                className='flex-1 p-2 bg-primary-bg text-text border border-text rounded'
+                                            />
                                             <button
-                                                onClick={() => startEdit(idString, subject.subjectName)}
-                                                className='bg-[#e0e0e0] text-black p-2 rounded'
+                                                onClick={() => handleEditSubject(idString)}
+                                                disabled={isLoading}
+                                                className='bg-button-bg text-button-text p-2 rounded'
                                             >
-                                                <Edit2 size={16} />
+                                                <Save size={16} />
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteSubject(idString)}
-                                                disabled={isLoading}
-                                                className='bg-[#e0e0e0] text-black p-2 rounded'
+                                                onClick={cancelEdit}
+                                                className='bg-button-bg text-button-text p-2 rounded'
                                             >
-                                                <Trash2 size={16} />
+                                                <X size={16} />
                                             </button>
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                        );
-                    })}
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => (router as any).push(`/lags/${idString}`)}
+                                                className='flex-1 text-left text-text hover:text-white'
+                                            >
+                                                {subject.subjectName}
+                                            </button>
+                                            <div className='flex gap-2'>
+                                                <button
+                                                    onClick={() => startEdit(idString, subject.subjectName)}
+                                                    className='bg-button-bg text-button-text p-2 rounded'
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteSubject(idString)}
+                                                    disabled={isLoading}
+                                                    className='bg-button-bg text-button-text p-2 rounded'
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className='text-center text-text py-8'>
+                            <p className='mb-4'>No subjects found. Start by adding your first subject!</p>
+                            <button
+                                onClick={() => setIsAdding(true)}
+                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
+                            >
+                                <Plus size={16} />
+                                Add Your First Subject
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Simple pagination */}
@@ -234,14 +255,14 @@ const LagPage = ()=>{
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
                         disabled={page === 1}
-                        className='bg-[#e0e0e0] text-black px-4 py-2 rounded disabled:opacity-50'
+                        className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
                     >
                         Previous
                     </button>
-                    <span className='text-[#e0e0e0] px-4 py-2'>Page {page}</span>
+                    <span className='text-text px-4 py-2'>Page {page}</span>
                     <button
                         onClick={() => setPage(page + 1)}
-                        className='bg-[#e0e0e0] text-black px-4 py-2 rounded'
+                        className='bg-button-bg text-button-text px-4 py-2 rounded'
                     >
                         Next
                     </button>
