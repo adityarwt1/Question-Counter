@@ -54,7 +54,10 @@ export async function GET(req:NextRequest) :Promise<NextResponse<LagResponoseDat
             status:HttpStatusCode.OK,
             success:true,
             data,
-            message:"Lags fetch successfully!"
+            message:"Lags fetch successfully!",
+            page,
+            limit,
+            skip
         })
     } catch (error) {
         console.log(error)

@@ -9,6 +9,10 @@ const LagBodySchema:Schema<LagBodyDocument>  = new Schema({
     lagChapterId:{
         type:Schema.Types.ObjectId,
         required:true
+    },
+    body:{
+        type:String,
+        required:true
     }
 },{
     timestamps:true

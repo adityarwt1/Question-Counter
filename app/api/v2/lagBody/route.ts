@@ -3,7 +3,7 @@ import { HttpStatusCode } from "@/enums/Reponse";
 import { LagChapterInterface, LagChapterUpadateInterface } from "@/interface/lagChapter/lagchapter";
 import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse";
 import { mongoconnect } from "@/lib/mongodb";
-import LagChapters from "@/models/lag/LagChapters";
+import LagBody from "@/models/lag/LagBody";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,7 +11,7 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
     try {
         const authenticatedUser = await VerifyToken(req)
         const searchParams = req.nextUrl.searchParams;
-        const subjectId = searchParams.get("subjectId")
+        const lagChapterId = searchParams.get("lagChapterId")
         const page = Number(searchParams.get("page"))|| 1;
         const limit = Number(searchParams.get("limit")) || 10;
         const skip = (page -1)* limit
@@ -21,8 +21,8 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
             return Unauthorized()
         }
 
-        if(!subjectId){
-            return BadRequest("subjectId not provided in body!")
+        if(!lagChapterId){
+            return BadRequest("lagChapterId not provided in body!")
         }
         const isConnected = await mongoconnect()
 
@@ -30,15 +30,15 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
             return FailedToConnectDatabse()
         }
         
-        const data = await LagChapters.aggregate([
+        const data = await LagBody.aggregate([
             {
                 $match:{
-                    subjectId:new mongoose.Types.ObjectId(subjectId)
+                    lagChapterId:new mongoose.Types.ObjectId(lagChapterId)
                 }
             },{
                 $project:{
                     _id:1,
-                    chapterName:1
+                    body:1
                 }
             },
             {
@@ -52,9 +52,9 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
             status:HttpStatusCode.OK,
             success:true,
             data,
-            page,
+            skip,
             limit,
-            skip
+            page
         })
     } catch (error) {
         console.log(error)   
@@ -70,15 +70,15 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
             return Unauthorized()
         }
 
-        const {subjectId, chapterName} = await req.json()
+        const {_id, body} = await req.json()
 
-        if(!subjectId || !chapterName){
-            return BadRequest("subjectId and chapterName not provided!")
+        if(!_id || !body){
+            return BadRequest("lagChapterId and body not provided!")
         }
 
-        const data = await LagChapters.create({
-            subjectId,
-            chapterName
+        const data = await LagBody.create({
+            lagChapterId:_id,
+            body
         })
 
         if(!data){
@@ -88,6 +88,7 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
         return NextResponse.json({
             success:true,
             status:HttpStatusCode.CREATED,
+            data
         },{
             status:HttpStatusCode.CREATED
         })
@@ -105,10 +106,10 @@ export async function PATCH(req:NextRequest):Promise<NextResponse<LagChapterUpad
             return Unauthorized()
         }
 
-        const {_id, chapterName} = await req.json()
+        const {_id, body} = await req.json()
 
-        if(!_id || !chapterName){
-            return BadRequest("chapter is not provided or chapterName!")
+        if(!_id || !body){
+            return BadRequest("chapter is not provided or body!")
         }
 
         const isConenected = await mongoconnect()
@@ -117,15 +118,15 @@ export async function PATCH(req:NextRequest):Promise<NextResponse<LagChapterUpad
             return FailedToConnectDatabse()
         }
 
-        const data = await LagChapters.findOneAndUpdate({
+        const data = await LagBody.findOneAndUpdate({
             _id
         },
         {
-            chapterName
+            body
         },{
             new :true
         }
-        ).select("chapterName _id").lean()
+        ).select("body _id").lean()
         return NextResponse.json({
             status:HttpStatusCode.OK,
             success:true,
@@ -158,7 +159,7 @@ export async function DELETE(req:NextRequest) :Promise<NextResponse<StanderedRes
         }
 
         try {
-            await LagChapters.findOneAndDelete({
+            await LagBody.findOneAndDelete({
                 _id
             })
         } catch (error) {
