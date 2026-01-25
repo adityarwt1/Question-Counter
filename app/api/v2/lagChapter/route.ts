@@ -1,6 +1,7 @@
 import { BadRequest, FailedToConnectDatabse, InternalServerIssue, Unauthorized, VerifyToken } from "@/DRY/apiresponse";
 import { HttpStatusCode } from "@/enums/Reponse";
 import { LagChapterInterface } from "@/interface/lagChapter/lagchapter";
+import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse";
 import { mongoconnect } from "@/lib/mongodb";
 import LagChapters from "@/models/lag/LagChapters";
 import mongoose from "mongoose";
@@ -10,7 +11,7 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
     try {
         const authenticatedUser = await VerifyToken(req)
         const searchParams = req.nextUrl.searchParams;
-        const lagId = searchParams.get("chapterId")
+        const subjectId = searchParams.get("subjectId")
         const page = Number(searchParams.get("page"))|| 1;
         const limit = Number(searchParams.get("limit")) || 10;
         const skip = (page -1)* limit
@@ -20,8 +21,8 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
             return Unauthorized()
         }
 
-        if(!lagId){
-            return BadRequest("lagId not provided in body!")
+        if(!subjectId){
+            return BadRequest("subjectId not provided in body!")
         }
         const isConnected = await mongoconnect()
 
@@ -32,7 +33,7 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
         const data = await LagChapters.aggregate([
             {
                 $match:{
-                    chapterId:new mongoose.Types.ObjectId(authenticatedUser.user._id)
+                    subjectId:new mongoose.Types.ObjectId(subjectId)
                 }
             },{
                 $project:{
@@ -54,6 +55,41 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
         })
     } catch (error) {
         console.log(error)   
+        return InternalServerIssue(error)
+    }
+}
+
+export async function POST(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
+    try {
+        const authenticationdata = await VerifyToken(req)
+
+        if(!authenticationdata.isVerified){
+            return Unauthorized()
+        }
+
+        const {subjectId, chapterName} = await req.json()
+
+        if(!subjectId || !chapterName){
+            return BadRequest("subjectId and chapterName not provided!")
+        }
+
+        const data = await LagChapters.create({
+            subjectId,
+            chapterName
+        })
+
+        if(!data){
+            return InternalServerIssue("failed to create chapter for subject!")
+        }
+
+        return NextResponse.json({
+            success:true,
+            status:HttpStatusCode.CREATED,
+        },{
+            status:HttpStatusCode.CREATED
+        })
+    } catch (error) {
+        console.log(error)
         return InternalServerIssue(error)
     }
 }
