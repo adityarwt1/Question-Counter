@@ -122,7 +122,7 @@ export async function PATCH(req:NextRequest):Promise<NextResponse<LagChapterUpad
         },{
             new :true
         }
-        )
+        ).select("chapterName _id").lean()
         return NextResponse.json({
             status:HttpStatusCode.OK,
             success:true,

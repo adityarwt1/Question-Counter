@@ -8,4 +8,7 @@ interface LagResponseDataInterface {
 export interface LagResponoseData extends StanderedResponse {
     data?:LagResponoseData[]
 }
+export interface LagUpadateResponoseData extends StanderedResponse {
+    data?:LagResponoseData
+}
 

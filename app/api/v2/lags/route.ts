@@ -1,6 +1,6 @@
 import { BadRequest, FailedToConnectDatabse, InternalServerIssue, TestingTest, Unauthorized, UnExpectedError, VerifyToken } from "@/DRY/apiresponse";
 import { HttpStatusCode } from "@/enums/Reponse";
-import { LagResponoseData } from "@/interface/Lags/lagresponse";
+import { LagResponoseData, LagUpadateResponoseData } from "@/interface/Lags/lagresponse";
 import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse";
 import { mongoconnect } from "@/lib/mongodb";
 import Lags from "@/models/lag/Lags";
@@ -106,7 +106,7 @@ export async function POST(req:NextRequest) :Promise<NextResponse<StanderedRespo
     
 }
 
-export async function PATCH(req:NextRequest):Promise<NextResponse<StanderedResponse>> {
+export async function PATCH(req:NextRequest):Promise<NextResponse<LagUpadateResponoseData>> {
     try {
         const authentication = await VerifyToken(req)
 
@@ -132,7 +132,7 @@ export async function PATCH(req:NextRequest):Promise<NextResponse<StanderedRespo
             subjectName
         },{
             new:true
-        })
+        }).select("_id subjectName")
 
         if(!data){
             return UnExpectedError("Failed to update!")
@@ -140,6 +140,7 @@ export async function PATCH(req:NextRequest):Promise<NextResponse<StanderedRespo
         return NextResponse.json({
             status:HttpStatusCode.OK,
             success:true,
+            data
         })
     } catch (error) {
         console.log(error)
