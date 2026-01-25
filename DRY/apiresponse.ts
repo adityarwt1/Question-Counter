@@ -10,12 +10,16 @@ export const BadRequest  =async (message?:string )=> NextResponse.json<Standered
     status:HttpStatusCode.BAD_REQUEST,
     error:HttpStatusText.BAD_REQUEST,
     message
+},{
+    status:HttpStatusCode.BAD_REQUEST
 })
 export const UnExpectedError  =async (message?:string )=> NextResponse.json<StanderedResponse>({
     success:false,
     status:HttpStatusCode.BAD_REQUEST,
     error:HttpStatusText.BAD_REQUEST,
     message
+},{
+    status:HttpStatusCode.BAD_REQUEST
 })
 
 export const InternalServerIssue =async (error?:Error | unknown)=> NextResponse.json<StanderedResponse>({
@@ -23,6 +27,8 @@ export const InternalServerIssue =async (error?:Error | unknown)=> NextResponse.
     status:HttpStatusCode.INTERNAL_SERVER_ERROR,
     error:HttpStatusText.INTERNAL_SERVER_ERROR,
     success:false
+},{
+    status:HttpStatusCode.INTERNAL_SERVER_ERROR
 })
 
 export const TestingTest = async (message:string)=> NextResponse.json({
@@ -35,6 +41,8 @@ export const Unauthorized = async ()=> NextResponse.json<StanderedResponse>({
     success:false,
     error:HttpStatusText.UNAUTHORIZED,
     message:"User aunthorized!"
+},{
+    status:HttpStatusCode.UNAUTHORIZED
 })
 
 export const FailedToConnectDatabse = async ()=> NextResponse.json<StanderedResponse>({
@@ -42,6 +50,8 @@ export const FailedToConnectDatabse = async ()=> NextResponse.json<StanderedResp
     success:false,
     error:HttpStatusText.INTERNAL_SERVER_ERROR,
     message:"Failed to connect database!"
+},{
+    status:HttpStatusCode.INTERNAL_SERVER_ERROR
 })
 
 
@@ -52,7 +62,6 @@ export const VerifyToken = async (req:NextRequest) : Promise<{
     try {
         const header = req.headers;
         const token = header.get("Authorization")?.split(" ")[1];
-        console.log("token " , token)
         if(!token){
             return {
                 isVerified:false
