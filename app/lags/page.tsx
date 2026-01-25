@@ -1,43 +1,252 @@
 "use client"
-import NavigateButton from '@/components/Lags/NavigateButtonSubject'
 import { LagResponoseData, LagResponseDataInterface } from '@/interface/Lags/lagresponse'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
+import { Plus, Edit2, Trash2, Save, X } from 'lucide-react'
 
 const LagPage = ()=>{
     const [lagData, setLagData] = useState<LagResponseDataInterface[]>()
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [isAdding, setIsAdding] = useState(false)
+    const [newSubjectName, setNewSubjectName] = useState('')
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [editingName, setEditingName] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
+
+    const fetchData = async (currentPage: number = 1) => {
+        let token;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+        }
+        const response = await fetch(`${process.env.NEXT_PUBLIC_LAGS}?page=${currentPage}&limit=10`, {
+            method:'GET',
+            headers:{
+                "Authorization":`Bearer ${token}`
+            }
+        })
+
+        if(response.status === 401){
+            return router.replace('/signin')
+        }
+        const responseData :LagResponoseData = await response.json()
+        setLagData(responseData.data)
+        // Assuming total count is not returned, for simplicity, assume 10 pages or something. Actually, backend doesn't return total, so pagination might be limited.
+        // For now, just set page.
+    }
+
     useEffect(()=>{
+        fetchData(page)
+    },[page])
 
-        (async()=>{
-            let token;
-            if(typeof window !== "undefined"){
-                token = localStorage.getItem(process.env.COOKIE_NAME as string)
-            }
-            const response  = await fetch(process.env.NEXT_PUBLIC_LAGS as string , {
-                method:'GET',
-                headers:{
-                    "Authorization":`Bearer ${token}`
-                }
+    const handleAddSubject = async () => {
+        if (!newSubjectName.trim()) return
+        setIsLoading(true)
+        let token;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+        }
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_LAGS as string, {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subjectName: newSubjectName })
             })
-
-            if(response.status === 401){
-                return router.replace('/signin')
+            if (response.ok) {
+                setNewSubjectName('')
+                setIsAdding(false)
+                fetchData(page)
             }
-            const responseData :LagResponoseData = await response.json()
-            console.log(responseData.data)
-            setLagData(responseData.data)
-        })()
-    },[])
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
-    
+    const handleEditSubject = async (id: string) => {
+        if (!editingName.trim()) return
+        setIsLoading(true)
+        let token;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+        }
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_LAGS as string, {
+                method: 'PATCH',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ _id: id, subjectName: editingName })
+            })
+            if (response.ok) {
+                setEditingId(null)
+                setEditingName('')
+                fetchData(page)
+            }
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleDeleteSubject = async (id: string) => {
+        setIsLoading(true)
+        let token;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+        }
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_LAGS as string, {
+                method: 'DELETE',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ _id: id })
+            })
+            if (response.ok) {
+                fetchData(page)
+            }
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const startEdit = (id: string, name: string) => {
+        setEditingId(id)
+        setEditingName(name)
+    }
+
+    const cancelEdit = () => {
+        setEditingId(null)
+        setEditingName('')
+    }
+
     return (
-        <div className='w-full bg-[#18181B] h-screen flex flex-col'>
-            {lagData?.map((subject) => {
-                const idString = typeof subject._id === "string" ? subject._id : subject._id.toString();
-                return <NavigateButton key={idString} {...subject} _id={idString} />;
-            })}
+        <div className='w-full bg-[#18181B] min-h-screen flex flex-col items-center p-4'>
+            <div className='w-full max-w-4xl'>
+                <div className='flex justify-between items-center mb-4'>
+                    <h1 className='text-[#e0e0e0] text-2xl font-bold'>Subjects</h1>
+                    <button
+                        onClick={() => setIsAdding(!isAdding)}
+                        className='bg-[#e0e0e0] text-black px-4 py-2 rounded flex items-center gap-2'
+                    >
+                        <Plus size={16} />
+                        Add Subject
+                    </button>
+                </div>
+
+                {isAdding && (
+                    <div className='bg-[#27272A] p-4 rounded mb-4'>
+                        <input
+                            type='text'
+                            value={newSubjectName}
+                            onChange={(e) => setNewSubjectName(e.target.value)}
+                            placeholder='Enter subject name'
+                            className='w-full p-2 bg-[#18181B] text-[#e0e0e0] border border-[#e0e0e0] rounded'
+                        />
+                        <div className='flex gap-2 mt-2'>
+                            <button
+                                onClick={handleAddSubject}
+                                disabled={isLoading}
+                                className='bg-[#e0e0e0] text-black px-4 py-2 rounded'
+                            >
+                                Add
+                            </button>
+                            <button
+                                onClick={() => setIsAdding(false)}
+                                className='bg-[#e0e0e0] text-black px-4 py-2 rounded'
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className='grid gap-4'>
+                    {lagData?.map((subject) => {
+                        const idString = typeof subject._id === "string" ? subject._id : subject._id.toString();
+                        return (
+                            <div key={idString} className='bg-[#27272A] p-4 rounded flex items-center justify-between'>
+                                {editingId === idString ? (
+                                    <div className='flex-1 flex items-center gap-2'>
+                                        <input
+                                            type='text'
+                                            value={editingName}
+                                            onChange={(e) => setEditingName(e.target.value)}
+                                            className='flex-1 p-2 bg-[#18181B] text-[#e0e0e0] border border-[#e0e0e0] rounded'
+                                        />
+                                        <button
+                                            onClick={() => handleEditSubject(idString)}
+                                            disabled={isLoading}
+                                            className='bg-[#e0e0e0] text-black p-2 rounded'
+                                        >
+                                            <Save size={16} />
+                                        </button>
+                                        <button
+                                            onClick={cancelEdit}
+                                            className='bg-[#e0e0e0] text-black p-2 rounded'
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => (router as any).push(`/lags/${idString}`)}
+                                            className='flex-1 text-left text-[#e0e0e0] hover:text-white'
+                                        >
+                                            {subject.subjectName}
+                                        </button>
+                                        <div className='flex gap-2'>
+                                            <button
+                                                onClick={() => startEdit(idString, subject.subjectName)}
+                                                className='bg-[#e0e0e0] text-black p-2 rounded'
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteSubject(idString)}
+                                                disabled={isLoading}
+                                                className='bg-[#e0e0e0] text-black p-2 rounded'
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Simple pagination */}
+                <div className='flex justify-center gap-2 mt-4'>
+                    <button
+                        onClick={() => setPage(Math.max(1, page - 1))}
+                        disabled={page === 1}
+                        className='bg-[#e0e0e0] text-black px-4 py-2 rounded disabled:opacity-50'
+                    >
+                        Previous
+                    </button>
+                    <span className='text-[#e0e0e0] px-4 py-2'>Page {page}</span>
+                    <button
+                        onClick={() => setPage(page + 1)}
+                        className='bg-[#e0e0e0] text-black px-4 py-2 rounded'
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }
