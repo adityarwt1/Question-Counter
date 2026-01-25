@@ -1,6 +1,6 @@
-import { BadRequest, FailedToConnectDatabse, InternalServerIssue, Unauthorized, VerifyToken } from "@/DRY/apiresponse";
+import { BadRequest, FailedToConnectDatabse, InternalServerIssue, Unauthorized, UnExpectedError, VerifyToken } from "@/DRY/apiresponse";
 import { HttpStatusCode } from "@/enums/Reponse";
-import { LagChapterInterface } from "@/interface/lagChapter/lagchapter";
+import { LagChapterInterface, LagChapterUpadateInterface } from "@/interface/lagChapter/lagchapter";
 import { StanderedResponse } from "@/interface/Responses/Standered/standeredResponse";
 import { mongoconnect } from "@/lib/mongodb";
 import LagChapters from "@/models/lag/LagChapters";
@@ -87,6 +87,84 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
             status:HttpStatusCode.CREATED,
         },{
             status:HttpStatusCode.CREATED
+        })
+    } catch (error) {
+        console.log(error)
+        return InternalServerIssue(error)
+    }
+}
+
+export async function PATCH(req:NextRequest):Promise<NextResponse<LagChapterUpadateInterface>> {
+    try {
+        const authenticatedData = await VerifyToken(req)
+
+        if(!authenticatedData.isVerified){
+            return Unauthorized()
+        }
+
+        const {_id, chapterName} = await req.json()
+
+        if(!_id || !chapterName){
+            return BadRequest("chapter is not provided or chapterName!")
+        }
+
+        const isConenected = await mongoconnect()
+
+        if(!isConenected){
+            return FailedToConnectDatabse()
+        }
+
+        const data = await LagChapters.findOneAndUpdate({
+            _id
+        },
+        {
+            chapterName
+        },{
+            new :true
+        }
+        )
+        return NextResponse.json({
+            status:HttpStatusCode.OK,
+            success:true,
+            data
+        })
+    } catch (error) {
+        console.log(error)
+        return InternalServerIssue(error)
+    }
+}
+
+export async function DELETE(req:NextRequest) :Promise<NextResponse<StanderedResponse>> {
+    try {
+        const authenticationData = await VerifyToken(req)        
+
+        if(!authenticationData.isVerified){
+            return Unauthorized()
+        }
+
+        const {_id} = await req.json()
+
+        if(!_id){
+            return BadRequest("_id not provided in body!")
+        }
+
+        const isConnected = await mongoconnect()
+
+        if(!isConnected){
+            return FailedToConnectDatabse()
+        }
+
+        try {
+            await LagChapters.findOneAndDelete({
+                _id
+            })
+        } catch (error) {
+            return UnExpectedError("Failed to delete chapter!")
+        }
+
+        return NextResponse.json({
+            success:true,
+            status:HttpStatusCode.OK
         })
     } catch (error) {
         console.log(error)

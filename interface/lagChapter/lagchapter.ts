@@ -9,3 +9,6 @@ interface LagChapterInterfaceData {
 export interface LagChapterInterface extends StanderedResponse {
     data?: LagChapterInterfaceData[]
 }
+export interface LagChapterUpadateInterface extends StanderedResponse {
+    data?: LagChapterInterfaceData
+}
