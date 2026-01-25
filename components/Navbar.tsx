@@ -8,7 +8,7 @@ export const Navbar = ()=>{
 
     return (
         <nav className="flex w-full bg-primary-bg p-4 border-b border-card-bg">
-            <div className="font-mono w-[70%] text-xl text-text">Exam-Booster</div>
+            <Link href='/' className="font-mono w-[70%] text-xl text-text">Exam-Booster</Link>
             <div className="flex w-[30%] justify-evenly">
                 <Link href='/' className="text-text hover:text-button-bg transition-colors">Home</Link>
                 <Link href='/lags' className="text-text hover:text-button-bg transition-colors">Lag</Link>
