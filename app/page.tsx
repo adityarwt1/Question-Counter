@@ -224,7 +224,7 @@ export default function SubjectPage() {
   </div>
 
         <h1 className="text-3xl font-bold text-center text-zinc-200 mb-6">
-          Total Questions: {Number(totalQuestion).toLocaleString()}/15,000 ({((Number(totalQuestion) / 15000) * 100).toFixed(1)}%)
+          Total Questions: {Number(totalQuestion).toLocaleString()}/15,000
         </h1>
 
         {/* Overall Progress Bar */}
