@@ -48,7 +48,7 @@ const LagChapterPage = ()=>{
         setIsLoading(true)
         let token ;
         if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
         }
         try {
             const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
