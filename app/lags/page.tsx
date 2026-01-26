@@ -26,7 +26,8 @@ const LagPage = ()=>{
             method:'GET',
             headers:{
                 "Authorization":`Bearer ${token}`
-            }
+            },
+            
         })
 
         if(response.status === 401){
