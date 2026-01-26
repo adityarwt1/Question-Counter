@@ -20,7 +20,7 @@ const LagPage = ()=>{
         if (isInitial) setIsInitialLoading(true)
         let token;
         if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_NEXT_PUBLIC_COOKIE_NAME as string)
         }
         const response = await fetch(`${process.env.NEXT_PUBLIC_LAGS}?page=${currentPage}&limit=10`, {
             method:'GET',
@@ -49,7 +49,7 @@ const LagPage = ()=>{
         setIsLoading(true)
         let token;
         if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
         }
         try {
             const response = await fetch(process.env.NEXT_PUBLIC_LAGS as string, {
@@ -77,7 +77,7 @@ const LagPage = ()=>{
         setIsLoading(true)
         let token;
         if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
         }
         try {
             const response = await fetch(process.env.NEXT_PUBLIC_LAGS as string, {
@@ -104,7 +104,7 @@ const LagPage = ()=>{
         setIsLoading(true)
         let token;
         if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
         }
         try {
             const response = await fetch(process.env.NEXT_PUBLIC_LAGS as string, {
