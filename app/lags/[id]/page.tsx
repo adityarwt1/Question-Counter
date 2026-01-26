@@ -20,7 +20,7 @@ const LagChapterPage = ()=>{
         if (isInitial) setIsInitialLoading(true)
         let token ;
         if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.COOKIE_NAME as string)
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
         }
         if(!token){
             return router.replace("/signin")
