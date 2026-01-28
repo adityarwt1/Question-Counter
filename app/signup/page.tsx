@@ -65,7 +65,7 @@ const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
       <div className="w-full max-w-md">
         <div className="bg-zinc-800 rounded-lg shadow-xl p-8 border border-zinc-700">
           <h1 className="text-3xl font-bold text-center mb-2" style={{ color: '#e0e0e0' }}>
-            Sign Up
+            Sign Up 
           </h1>
           <p className="text-zinc-400 text-center mb-8">
             Create your account to get started
