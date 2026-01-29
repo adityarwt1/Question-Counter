@@ -222,7 +222,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<StanderedRespo
 
     const subjects = await Subject.find({
       userId: new mongoose.Types.ObjectId(decoded._id)
-    }).sort({ createdAt: -1 });
+    }).sort({ createdAt: -1 }).select("_id subjectName dppCount classCount pyqCount chatGptCount bookCount");
 
     return NextResponse.json({
       status: HttpStatusCode.OK,
