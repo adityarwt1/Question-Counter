@@ -76,6 +76,11 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
             return BadRequest("lagChapterId and body not provided!")
         }
 
+        const isConenected = await mongoconnect()
+
+        if(!isConenected){
+            return InternalServerIssue(new Error("failed to connect database!"))
+        }
         const data = await LagBody.create({
             lagChapterId:_id,
             body
