@@ -1,13 +1,15 @@
-// import { InternalServerIssue } from "@/DRY/apiresponse";
-// import { NextRequest, NextResponse } from "next/server";
+import { InternalServerIssue } from "@/DRY/apiresponse";
+import { NextRequest, NextResponse } from "next/server";
 
-// export async function POST(req:NextRequest) : Promise<NextResponse> {
+export async function POST(req:NextRequest) : Promise<NextResponse> {
 
-//     try {
-        
-//     } catch (error) {
-//         console.log(error)
-//         return InternalServerIssue(error)
-//     }
+    try {
+        return NextResponse.json({
+            success:true
+        })
+    } catch (error) {
+        console.log(error)
+        return InternalServerIssue(error)
+    }
     
-// }
+}
