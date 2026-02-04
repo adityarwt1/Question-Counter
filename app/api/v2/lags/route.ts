@@ -37,9 +37,8 @@ export async function GET(req:NextRequest) :Promise<NextResponse<LagResponoseDat
                     }
                 },
                 {
-                    $project: {
-                    _id: 1,
-                    subjectName: 1,
+                    $sort:{
+                        createdAt:-1
                     }
                 },
                 {
@@ -47,6 +46,11 @@ export async function GET(req:NextRequest) :Promise<NextResponse<LagResponoseDat
                 },
                 {
                     $limit: limit
+                },{
+                    $project: {
+                    _id: 1,
+                    subjectName: 1,
+                    }
                 }
                 ]);
         return NextResponse.json({

@@ -31,22 +31,27 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
         }
         
         const data = await LagChapters.aggregate([
-            {
-                $match:{
-                    subjectId:new mongoose.Types.ObjectId(subjectId)
-                }
-            },{
-                $project:{
-                    _id:1,
-                    chapterName:1
-                }
-            },
-            {
-                $skip:skip
-            },{
-                $limit:limit
-            }
-        ])
+  {
+    $match: {
+      subjectId: new mongoose.Types.ObjectId(subjectId)
+    }
+  },
+  {
+    $sort: { createdAt: -1 }   // 🔥 FIRST sort by latest
+  },
+  {
+    $skip: skip
+  },
+  {
+    $limit: limit
+  },
+  {
+    $project: {
+      _id: 1,
+      chapterName: 1
+    }
+  }
+]);
 
         return NextResponse.json({
             status:HttpStatusCode.OK,

@@ -36,16 +36,24 @@ export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterf
                     lagChapterId:new mongoose.Types.ObjectId(lagChapterId)
                 }
             },{
-                $project:{
-                    _id:1,
-                    body:1
+                $sort:{
+                    createdAt: -1
                 }
             },
             {
                 $skip:skip
             },{
                 $limit:limit
-            }
+            },{
+                $sort:{
+                    createdAt: -1
+                }
+            },{
+                $project:{
+                    _id:1,
+                    body:1
+                }
+            },
         ])
 
         return NextResponse.json({
