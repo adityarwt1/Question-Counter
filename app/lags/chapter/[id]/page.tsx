@@ -214,7 +214,7 @@ const ChapterBodyPage = ()=>{
                                                 className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
                                             >
                                                 <Save size={16} />
-                                                Save
+                                                {isLoading ?"Saving..":"Save"}
                                             </button>
                                             <button
                                                 onClick={cancelEdit}
