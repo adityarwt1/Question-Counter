@@ -1,7 +1,7 @@
 "use client"
 import { LagResponoseData, LagResponseDataInterface } from '@/interface/Lags/lagresponse'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react'
 
 const LagPage = ()=>{
@@ -273,4 +273,12 @@ const LagPage = ()=>{
     )
 }
 
-export default LagPage;
+
+const LagPageContent = ()=>{
+    return (
+        <Suspense fallback={<><div>Loading...</div></>}>
+            <LagPage></LagPage>
+        </Suspense>
+    )
+}
+export default LagPageContent;
