@@ -1,8 +1,9 @@
 "use client"
 import { LagResponoseData, LagResponseDataInterface } from '@/interface/Lags/lagresponse'
-import { useRouter } from 'next/navigation'
+import { useRouter , } from 'next/navigation'
 import React, { Suspense, useEffect, useState } from 'react'
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react'
+import Link from 'next/link'
 
 const LagPage = ()=>{
     const [lagData, setLagData] = useState<LagResponseDataInterface[]>()
@@ -15,7 +16,8 @@ const LagPage = ()=>{
     const [isLoading, setIsLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
-
+    const [isHover, setIsHover] = useState<string>("")
+   
     const fetchData = async (currentPage: number = 1, isInitial: boolean = false) => {
         if (isInitial) setIsInitialLoading(true)
         let token;
@@ -211,12 +213,14 @@ const LagPage = ()=>{
                                         </div>
                                     ) : (
                                         <>
-                                            <button
-                                                onClick={() => (router as any).push(`/lags/${idString}`)}
+                                            <Link
+                                                href={`/lags/${idString}`}
+                                                prefetch={isHover === idString}
+                                                onMouseEnter={()=> setIsHover(idString)}
                                                 className='flex-1 text-left text-text hover:text-white'
                                             >
                                                 {subject.subjectName}
-                                            </button>
+                                            </Link>
                                             <div className='flex gap-2'>
                                                 <button
                                                     onClick={() => startEdit(idString, subject.subjectName)}

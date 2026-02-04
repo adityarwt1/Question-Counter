@@ -3,6 +3,7 @@ import { LagChapterInterface, LagChapterInterfaceData } from "@/interface/lagCha
 import { useParams, useRouter } from "next/navigation";
 import React, { Suspense, useEffect, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft } from 'lucide-react'
+import Link from "next/link";
 
 const LagChapterPage = ()=>{
     const params = useParams()
@@ -15,7 +16,7 @@ const LagChapterPage = ()=>{
     const [editingName, setEditingName] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
-
+    const [isHover, setIsHover] = useState<string>("")
     const fetchData = async (currentPage: number = 1, isInitial: boolean = false) => {
         if (isInitial) setIsInitialLoading(true)
         let token ;
@@ -171,7 +172,7 @@ const LagChapterPage = ()=>{
                                 disabled={isLoading}
                                 className='bg-button-bg text-button-text px-4 py-2 rounded'
                             >
-                                Add
+                                {isLoading ? "Adding...":"Add"}
                             </button>
                             <button
                                 onClick={() => setIsAdding(false)}
@@ -218,12 +219,14 @@ const LagChapterPage = ()=>{
                                         </div>
                                     ) : (
                                         <>
-                                            <button
-                                                onClick={() => (router as any).push(`/lags/chapter/${id}`)}
+                                            <Link
+                                                href={`/lags/chapter/${id}` as any}
+                                                prefetch={isHover === id}
+                                                onMouseEnter={()=> setIsHover(id)}
                                                 className='flex-1 text-left text-text hover:text-white'
                                             >
                                                 {chapter.chapterName}
-                                            </button>
+                                            </Link>
                                             <div className='flex gap-2'>
                                                 <button
                                                     onClick={() => startEdit(id, chapter.chapterName)}

@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         protocol:"https",
         hostname:"raw.githubusercontent.com",
         pathname:"/adityarwt1/Question-Counter/**",
+      },
+      {
+        protocol:"https",
+        hostname:"chatgpt.com",
+        pathname:"/backend-api/**"
       }
     ]
   }

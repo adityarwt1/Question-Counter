@@ -10,7 +10,6 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(req:NextRequest) :Promise<NextResponse<LagResponoseData>>{
     try {
         const authenticationInfo = await VerifyToken(req);
-        console.log(authenticationInfo.user)
         const searchParms = req.nextUrl.searchParams;
 
         const limit = Number(searchParms.get("limit")) || 20;
