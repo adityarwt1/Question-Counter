@@ -164,7 +164,7 @@ const LagPage = ()=>{
                                 disabled={isLoading}
                                 className='bg-button-bg text-button-text px-4 py-2 rounded'
                             >
-                                Add
+                                {isLoading ? "Adding...":"Add"}
                             </button>
                             <button
                                 onClick={() => setIsAdding(false)}

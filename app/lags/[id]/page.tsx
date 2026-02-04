@@ -1,7 +1,7 @@
 "use client"
 import { LagChapterInterface, LagChapterInterfaceData } from "@/interface/lagChapter/lagchapter";
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft } from 'lucide-react'
 
 const LagChapterPage = ()=>{
@@ -279,4 +279,12 @@ const LagChapterPage = ()=>{
         </div>
     )
 }
-export default LagChapterPage
+
+const LagChapterPageContent = ()=>{
+    return (
+        <Suspense fallback={<><div>Loading...</div></>}>
+            <LagChapterPage/>
+        </Suspense>
+    )
+}
+export default LagChapterPageContent

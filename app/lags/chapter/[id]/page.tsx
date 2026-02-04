@@ -1,6 +1,6 @@
 "use client"
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft } from 'lucide-react'
 
 interface ChapterBody {
@@ -285,4 +285,11 @@ const ChapterBodyPage = ()=>{
     )
 }
 
-export default ChapterBodyPage
+const ChapterBodyContent = ()=>{
+    return (
+        <Suspense fallback={<><div>Loading...</div></>}>
+            <ChapterBodyPage></ChapterBodyPage>
+        </Suspense>
+    )
+}
+export default ChapterBodyContent
