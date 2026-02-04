@@ -16,7 +16,6 @@ const LagPage = ()=>{
     const [isLoading, setIsLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
-    const [isHover, setIsHover] = useState<string>("")
    
     const fetchData = async (currentPage: number = 1, isInitial: boolean = false) => {
         if (isInitial) setIsInitialLoading(true)
@@ -215,8 +214,7 @@ const LagPage = ()=>{
                                         <>
                                             <Link
                                                 href={`/lags/${idString}`}
-                                                prefetch={isHover === idString}
-                                                onMouseEnter={()=> setIsHover(idString)}
+                                                prefetch={true}
                                                 className='flex-1 text-left text-text hover:text-white'
                                             >
                                                 {subject.subjectName}
