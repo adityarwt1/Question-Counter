@@ -76,8 +76,9 @@ const ChapterBodyPage = ()=>{
             body: newBody
         }
         
-        // Immediately update UI
+        // Immediately update BOTH optimistic and actual data state
         setOptimisticData({ action: 'add', item: tempItem })
+        setData(prev => [tempItem, ...prev])
         
         // Clear form and close immediately
         const bodyToSave = newBody
@@ -120,9 +121,12 @@ const ChapterBodyPage = ()=>{
     const handleEditBody = async (bodyId: string) => {
         if (!editingBody.trim()) return
         
-        // Optimistic update
+        // Optimistic update - update BOTH states immediately
         const updatedItem = { _id: bodyId, body: editingBody }
         setOptimisticData({ action: 'edit', item: updatedItem })
+        setData(prev => prev.map(item => 
+            item._id === bodyId ? updatedItem : item
+        ))
         
         // Clear edit state immediately
         const bodyToSave = editingBody
@@ -144,16 +148,12 @@ const ChapterBodyPage = ()=>{
                 body: JSON.stringify({_id: bodyId, body: bodyToSave})
             })
             
-            if(response.ok){
-                // Update with confirmed data
-                setData(prev => prev.map(item => 
-                    item._id === bodyId ? { _id: bodyId, body: bodyToSave } : item
-                ))
-            } else {
+            if(!response.ok){
                 // Revert on error
                 fetchData(page)
                 alert('Failed to update lag point. Please try again.')
             }
+            // If successful, data is already updated optimistically
         } catch (error) {
             console.log(error)
             // Revert on error
@@ -163,8 +163,9 @@ const ChapterBodyPage = ()=>{
     }
 
     const handleDeleteBody = async (_id:string)=>{
-        // Optimistic delete
+        // Optimistic delete - update BOTH states immediately
         setOptimisticData({ action: 'delete', _id })
+        setData(prev => prev.filter(item => item._id !== _id))
         
         let token;
         if(typeof window !== "undefined"){
@@ -181,14 +182,12 @@ const ChapterBodyPage = ()=>{
                 body:JSON.stringify({_id})
             })
             
-            if(response.ok){
-                // Confirm deletion
-                setData(prev => prev.filter(item => item._id !== _id))
-            } else {
+            if(!response.ok){
                 // Revert on error
                 fetchData(page)
                 alert('Failed to delete lag point. Please try again.')
             }
+            // If successful, data is already deleted optimistically
         } catch (error) {
             console.log(error)
             // Revert on error
