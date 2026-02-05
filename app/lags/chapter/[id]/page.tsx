@@ -19,7 +19,7 @@ const ChapterBodyPage = ()=>{
     const [editingBody, setEditingBody] = useState('')
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
-    const [limit , setLimit ]= useState<number>(10)
+    const [limit , setLimit ]= useState<number>(5)
     const [optimisticData, setOptimisticData] = useOptimistic(
         data,
         (state, newData: { action: 'add' | 'edit' | 'delete', item?: ChapterBody, _id?: string }) => {
