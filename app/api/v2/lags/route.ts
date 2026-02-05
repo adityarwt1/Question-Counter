@@ -33,7 +33,7 @@ export async function GET(req:NextRequest) :Promise<NextResponse<LagResponoseDat
             const data = await Lags.aggregate([
                 {
                     $match: {
-                    userId: new mongoose.Types.ObjectId(authenticationInfo.user._id)
+                    userIds: new mongoose.Types.ObjectId(authenticationInfo.user._id)
                     }
                 },
                 {
@@ -92,7 +92,7 @@ export async function POST(req:NextRequest) :Promise<NextResponse<StanderedRespo
         }
         const added = await Lags.create({
             subjectName,
-            userId:authenticationInfo.user._id
+            userIds:authenticationInfo.user._id
         })
 
         if(!added){

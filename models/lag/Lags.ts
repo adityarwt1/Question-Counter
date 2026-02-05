@@ -1,7 +1,7 @@
 import mongoose , {Schema, Document}  from "mongoose";
 
 interface LagSubjectDocument extends Document {
-    userId:mongoose.Types.ObjectId
+    userIds:mongoose.Types.ObjectId[]
     subjectName: string
 }
 
@@ -10,10 +10,10 @@ const LagSubjectSchema:Schema<LagSubjectDocument> = new Schema({
         type:String,
         required:true
     },
-    userId:{
+    userIds:[{
         type:Schema.Types.ObjectId,
         required:true
-    }
+    }]
 },{
     timestamps:true
 })
