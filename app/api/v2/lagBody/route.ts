@@ -101,7 +101,10 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
         return NextResponse.json({
             success:true,
             status:HttpStatusCode.CREATED,
-            data
+            data:{
+                _id:data._id,
+                body:data.body,
+            }
         },{
             status:HttpStatusCode.CREATED
         })

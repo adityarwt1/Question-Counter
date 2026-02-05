@@ -1,6 +1,6 @@
 "use client"
 import { useParams, useRouter } from "next/navigation";
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useOptimistic, useState, useTransition } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft } from 'lucide-react'
 
 interface ChapterBody {
@@ -9,7 +9,7 @@ interface ChapterBody {
 }
 
 const ChapterBodyPage = ()=>{
-    const [data, setData] = useState<ChapterBody[]>()
+    const [data, setData] = useState<ChapterBody[]>([])
     const params = useParams()
     const {id} = params
     const [page, setPage] = useState(1)
@@ -20,6 +20,25 @@ const ChapterBodyPage = ()=>{
     const [isLoading, setIsLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
+    const [isPending, startTransition] = useTransition()
+    
+    const [optimisticData, setOptimisticData] = useOptimistic(
+        data,
+        (state, newData: { action: 'add' | 'edit' | 'delete', item?: ChapterBody, _id?: string }) => {
+            if (newData.action === 'add' && newData.item) {
+                return [newData.item, ...state]
+            }
+            if (newData.action === 'edit' && newData.item) {
+                return state.map(item => 
+                    item._id === newData.item!._id ? newData.item! : item
+                )
+            }
+            if (newData.action === 'delete' && newData._id) {
+                return state.filter(item => item._id !== newData._id)
+            }
+            return state
+        }
+    )
 
     const fetchData = async (currentPage: number = 1, isInitial: boolean = false) => {
         if (isInitial) setIsInitialLoading(true)
@@ -52,83 +71,120 @@ const ChapterBodyPage = ()=>{
 
     const handleAddBody = async () => {
         if (!newBody.trim()) return
-        setIsLoading(true)
-        let token;
-        if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
+        
+        // Create temporary item for optimistic update
+        const tempItem: ChapterBody = {
+            _id: 'temp-' + Date.now(),
+            body: newBody
         }
-        try {
-            const response = await fetch(process.env.NEXT_PUBLIC_LAG_BODY as string,{
-                method:'POST',
-                headers:{
-                    "Authorization":`Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({_id: id, body: newBody})
-            })
-            if(response.ok){
-                setNewBody('')
-                setIsAdding(false)
-                fetchData(page)
+        
+        startTransition(async () => {
+            setOptimisticData({ action: 'add', item: tempItem })
+            setIsLoading(true)
+            
+            let token;
+            if(typeof window !== "undefined"){
+                token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
             }
-        } catch (error) {
-            console.log(error)
-        } finally {
-            setIsLoading(false)
-        }
+            try {
+                const response = await fetch(process.env.NEXT_PUBLIC_LAG_BODY as string,{
+                    method:'POST',
+                    headers:{
+                        "Authorization":`Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({_id: id, body: newBody})
+                })
+                if(response.ok){
+                    const result = await response.json()
+                    // Update with real data from server
+                    setData(prev => [result.data, ...prev])
+                    setNewBody('')
+                    setIsAdding(false)
+                }
+            } catch (error) {
+                console.log(error)
+                // Revert on error
+                fetchData(page)
+            } finally {
+                setIsLoading(false)
+            }
+        })
     }
 
     const handleEditBody = async (bodyId: string) => {
         if (!editingBody.trim()) return
-        setIsLoading(true)
-        let token;
-        if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
-        }
-        try {
-            const response = await fetch(process.env.NEXT_PUBLIC_LAG_BODY as string,{
-                method:"PATCH",
-                headers:{
-                    "Authorization":`Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({_id: bodyId, body: editingBody})
+        
+        startTransition(async () => {
+            // Optimistic update
+            setOptimisticData({ 
+                action: 'edit', 
+                item: { _id: bodyId, body: editingBody } 
             })
-            if(response.ok){
-                setEditingId(null)
-                setEditingBody('')
-                fetchData(page)
+            setIsLoading(true)
+            
+            let token;
+            if(typeof window !== "undefined"){
+                token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
             }
-        } catch (error) {
-            console.log(error)
-        } finally {
-            setIsLoading(false)
-        }
+            try {
+                const response = await fetch(process.env.NEXT_PUBLIC_LAG_BODY as string,{
+                    method:"PATCH",
+                    headers:{
+                        "Authorization":`Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({_id: bodyId, body: editingBody})
+                })
+                if(response.ok){
+                    // Update with real data from server
+                    setData(prev => prev.map(item => 
+                        item._id === bodyId ? { _id: bodyId, body: editingBody } : item
+                    ))
+                    setEditingId(null)
+                    setEditingBody('')
+                }
+            } catch (error) {
+                console.log(error)
+                // Revert on error
+                fetchData(page)
+            } finally {
+                setIsLoading(false)
+            }
+        })
     }
 
     const handleDeleteBody = async (_id:string)=>{
-        setIsLoading(true)
-        let token;
-        if(typeof window !== "undefined"){
-            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
-        }
-        try {
-            const response = await fetch(process.env.NEXT_PUBLIC_LAG_BODY as string,{
-                method:'DELETE',
-                headers:{
-                    "Authorization":`Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body:JSON.stringify({_id})
-            })
-            if(response.ok){
-                fetchData(page)
+        startTransition(async () => {
+            // Optimistic delete
+            setOptimisticData({ action: 'delete', _id })
+            setIsLoading(true)
+            
+            let token;
+            if(typeof window !== "undefined"){
+                token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
             }
-        } catch (error) {
-            console.log(error)
-        } finally {
-            setIsLoading(false)
-        }
+            try {
+                const response = await fetch(process.env.NEXT_PUBLIC_LAG_BODY as string,{
+                    method:'DELETE',
+                    headers:{
+                        "Authorization":`Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body:JSON.stringify({_id})
+                })
+                if(response.ok){
+                    // Update real data
+                    setData(prev => prev.filter(item => item._id !== _id))
+                }
+            } catch (error) {
+                console.log(error)
+                // Revert on error
+                fetchData(page)
+            } finally {
+                setIsLoading(false)
+            }
+        })
     }
 
     const startEdit = (id: string, body: string) => {
@@ -152,11 +208,15 @@ const ChapterBodyPage = ()=>{
                         <ArrowLeft size={20} />
                     </button>
                     <h1 className='text-text text-2xl font-bold'>Lag Points</h1>
+                    {isPending && (
+                        <div className='animate-spin rounded-full h-5 w-5 border-b-2 border-text'></div>
+                    )}
                 </div>
                 <div className='flex justify-end mb-4'>
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
+                        disabled={isPending}
                     >
                         <Plus size={16} />
                         Add Lag Point
@@ -171,18 +231,20 @@ const ChapterBodyPage = ()=>{
                             placeholder='Enter lag point'
                             className='w-full p-2 bg-primary-bg text-text border border-text rounded'
                             rows={4}
+                            disabled={isPending}
                         />
                         <div className='flex gap-2 mt-2'>
                             <button
                                 onClick={handleAddBody}
-                                disabled={isLoading}
-                                className='bg-button-bg text-button-text px-4 py-2 rounded'
+                                disabled={isLoading || isPending}
+                                className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
                             >
                                 {isLoading ? "Adding...":"Add"}
                             </button>
                             <button
                                 onClick={() => setIsAdding(false)}
                                 className='bg-button-bg text-button-text px-4 py-2 rounded'
+                                disabled={isPending}
                             >
                                 Cancel
                             </button>
@@ -190,14 +252,14 @@ const ChapterBodyPage = ()=>{
                     </div>
                 )}
 
-                <div className='grid gap-4'>
+                <div className={`grid gap-4 ${isPending ? 'opacity-60' : ''}`}>
                     {isInitialLoading ? (
                         <div className='text-center text-text py-8'>
                             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
                             Loading lag points...
                         </div>
-                    ) : data && data.length > 0 ? (
-                        data.map((item) => (
+                    ) : optimisticData && optimisticData.length > 0 ? (
+                        optimisticData.map((item) => (
                             <div key={item._id} className='bg-card-bg p-4 rounded cursor-pointer hover:bg-[#3a3a3a] transition-colors'>
                                 {editingId === item._id ? (
                                     <div>
@@ -206,12 +268,13 @@ const ChapterBodyPage = ()=>{
                                             onChange={(e) => setEditingBody(e.target.value)}
                                             className='w-full p-2 bg-primary-bg text-text border border-text rounded'
                                             rows={4}
+                                            disabled={isPending}
                                         />
                                         <div className='flex gap-2 mt-2'>
                                             <button
                                                 onClick={() => handleEditBody(item._id)}
-                                                disabled={isLoading}
-                                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
+                                                disabled={isLoading || isPending}
+                                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50'
                                             >
                                                 <Save size={16} />
                                                 {isLoading ?"Saving..":"Save"}
@@ -219,6 +282,7 @@ const ChapterBodyPage = ()=>{
                                             <button
                                                 onClick={cancelEdit}
                                                 className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
+                                                disabled={isPending}
                                             >
                                                 <X size={16} />
                                                 Cancel
@@ -227,19 +291,20 @@ const ChapterBodyPage = ()=>{
                                     </div>
                                 ) : (
                                     <div>
-                                        <p className='text-text mb-2'>{item.body}</p>
+                                        <p className='text-text mb-2 whitespace-pre-wrap'>{item.body}</p>
                                         <div className='flex gap-2'>
                                             <button
                                                 onClick={() => startEdit(item._id, item.body)}
                                                 className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
+                                                disabled={isPending}
                                             >
                                                 <Edit2 size={16} />
                                                 Edit
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteBody(item._id)}
-                                                disabled={isLoading}
-                                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
+                                                disabled={isLoading || isPending}
+                                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 disabled:opacity-50'
                                             >
                                                 <Trash2 size={16} />
                                                 Delete
@@ -255,6 +320,7 @@ const ChapterBodyPage = ()=>{
                             <button
                                 onClick={() => setIsAdding(true)}
                                 className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
+                                disabled={isPending}
                             >
                                 <Plus size={16} />
                                 Add Your First Lag Point
@@ -267,7 +333,7 @@ const ChapterBodyPage = ()=>{
                 <div className='flex justify-center gap-2 mt-4'>
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
-                        disabled={page === 1}
+                        disabled={page === 1 || isPending}
                         className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
                     >
                         Previous
@@ -275,7 +341,8 @@ const ChapterBodyPage = ()=>{
                     <span className='text-text px-4 py-2'>Page {page}</span>
                     <button
                         onClick={() => setPage(page + 1)}
-                        className='bg-button-bg text-button-text px-4 py-2 rounded'
+                        disabled={isPending}
+                        className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
                     >
                         Next
                     </button>
