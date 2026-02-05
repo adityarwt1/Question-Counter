@@ -1,7 +1,7 @@
 "use client"
 import { LagChapterInterface, LagChapterInterfaceData } from "@/interface/lagChapter/lagchapter";
 import { useParams, useRouter } from "next/navigation";
-import React, { Suspense, useEffect, useOptimistic, useState, useTransition } from "react";
+import React, { Suspense, useEffect, useOptimistic, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft } from 'lucide-react'
 import Link from "next/link";
 
@@ -14,10 +14,8 @@ const LagChapterPage = ()=>{
     const [newChapterName, setNewChapterName] = useState('')
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editingName, setEditingName] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const [isHover, setIsHover] = useState<string>("")
-    const [isPending, startTransition] = useTransition()
 
     const [optimisticData, setOptimisticData] = useOptimistic(
         data,
@@ -73,113 +71,125 @@ const LagChapterPage = ()=>{
             chapterName: newChapterName
         }
         
-        startTransition(async () => {
-            setOptimisticData({ action: 'add', item: tempItem })
-            setIsLoading(true)
+        // Immediately update UI
+        setOptimisticData({ action: 'add', item: tempItem })
+        
+        // Clear form and close immediately
+        const nameToSave = newChapterName
+        setNewChapterName('')
+        setIsAdding(false)
+        
+        // Background API call
+        let token ;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
+        }
+        
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
+                method: 'POST',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subjectId: params.id, chapterName: nameToSave })
+            })
             
-            let token ;
-            if(typeof window !== "undefined"){
-                token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
-            }
-            try {
-                const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
-                    method: 'POST',
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ subjectId: params.id, chapterName: newChapterName })
-                })
-                if (response.ok) {
-                    const result = await response.json()
-                    // Update with real data from server
-                    setData(prev => [result.data, ...prev])
-                    setNewChapterName('')
-                    setIsAdding(false)
-                }
-            } catch (error) {
-                console.error(error)
+            if (response.ok) {
+                const result = await response.json()
+                // Replace temp item with real data from server
+                setData(prev => [result.data, ...prev.filter(item => item._id !== tempItem._id)])
+            } else {
                 // Revert on error
-                fetchData(page)
-            } finally {
-                setIsLoading(false)
+                setData(prev => prev.filter(item => item._id !== tempItem._id))
+                alert('Failed to add chapter. Please try again.')
             }
-        })
+        } catch (error) {
+            console.error(error)
+            // Revert on error
+            setData(prev => prev.filter(item => item._id !== tempItem._id))
+            alert('Failed to add chapter. Please try again.')
+        }
     }
 
     const handleEditChapter = async (id: string) => {
         if (!editingName.trim()) return
         
-        startTransition(async () => {
-            // Optimistic update
-            setOptimisticData({ 
-                action: 'edit', 
-                item: { _id: id, chapterName: editingName } 
+        // Optimistic update
+        const updatedItem = { _id: id, chapterName: editingName }
+        setOptimisticData({ action: 'edit', item: updatedItem })
+        
+        // Clear edit state immediately
+        const nameToSave = editingName
+        setEditingId(null)
+        setEditingName('')
+        
+        let token ;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
+        }
+        
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
+                method: 'PATCH',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ _id: id, chapterName: nameToSave })
             })
-            setIsLoading(true)
             
-            let token ;
-            if(typeof window !== "undefined"){
-                token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
-            }
-            try {
-                const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
-                    method: 'PATCH',
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ _id: id, chapterName: editingName })
-                })
-                if (response.ok) {
-                    // Update with real data from server
-                    setData(prev => prev.map(item => 
-                        item._id === id ? { _id: id, chapterName: editingName } : item
-                    ))
-                    setEditingId(null)
-                    setEditingName('')
-                }
-            } catch (error) {
-                console.error(error)
+            if (response.ok) {
+                // Update with confirmed data
+                setData(prev => prev.map(item => 
+                    item._id === id ? { _id: id, chapterName: nameToSave } : item
+                ))
+            } else {
                 // Revert on error
                 fetchData(page)
-            } finally {
-                setIsLoading(false)
+                alert('Failed to update chapter. Please try again.')
             }
-        })
+        } catch (error) {
+            console.error(error)
+            // Revert on error
+            fetchData(page)
+            alert('Failed to update chapter. Please try again.')
+        }
     }
 
     const handleDeleteChapter = async (id: string) => {
-        startTransition(async () => {
-            // Optimistic delete
-            setOptimisticData({ action: 'delete', _id: id })
-            setIsLoading(true)
+        // Optimistic delete
+        setOptimisticData({ action: 'delete', _id: id })
+        
+        let token ;
+        if(typeof window !== "undefined"){
+            token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
+        }
+        
+        try {
+            const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
+                method: 'DELETE',
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ _id: id })
+            })
             
-            let token ;
-            if(typeof window !== "undefined"){
-                token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
-            }
-            try {
-                const response = await fetch(process.env.NEXT_PUBLIC_LAG_CHAPTER as string, {
-                    method: 'DELETE',
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ _id: id })
-                })
-                if (response.ok) {
-                    // Update real data
-                    setData(prev => prev.filter(item => item._id !== id))
-                }
-            } catch (error) {
-                console.error(error)
+            if (response.ok) {
+                // Confirm deletion
+                setData(prev => prev.filter(item => item._id !== id))
+            } else {
                 // Revert on error
                 fetchData(page)
-            } finally {
-                setIsLoading(false)
+                alert('Failed to delete chapter. Please try again.')
             }
-        })
+        } catch (error) {
+            console.error(error)
+            // Revert on error
+            fetchData(page)
+            alert('Failed to delete chapter. Please try again.')
+        }
     }
 
     const startEdit = (id: string, name: string) => {
@@ -217,20 +227,15 @@ const LagChapterPage = ()=>{
                     <button
                         onClick={() => router.push('/lags')}
                         className='bg-button-bg text-button-text p-2 rounded hover:bg-opacity-80'
-                        disabled={isPending}
                     >
                         <ArrowLeft size={20} />
                     </button>
                     <h1 className='text-text text-2xl font-bold'>Chapters</h1>
-                    {isPending && (
-                        <div className='animate-spin rounded-full h-5 w-5 border-b-2 border-text'></div>
-                    )}
                 </div>
                 <div className='flex justify-end mb-4'>
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
-                        disabled={isPending}
                     >
                         <Plus size={16} />
                         Add Chapter
@@ -246,16 +251,14 @@ const LagChapterPage = ()=>{
                             onKeyDown={handleAddKeyDown}
                             placeholder='Enter chapter name (Press Enter to add, Esc to cancel)'
                             className='w-full p-2 bg-primary-bg text-text border border-text rounded'
-                            disabled={isPending}
                             autoFocus
                         />
                         <div className='flex gap-2 mt-2'>
                             <button
                                 onClick={handleAddChapter}
-                                disabled={isLoading || isPending}
-                                className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
+                                className='bg-button-bg text-button-text px-4 py-2 rounded'
                             >
-                                {isLoading ? "Adding...":"Add"}
+                                Add
                             </button>
                             <button
                                 onClick={() => {
@@ -263,7 +266,6 @@ const LagChapterPage = ()=>{
                                     setNewChapterName('')
                                 }}
                                 className='bg-button-bg text-button-text px-4 py-2 rounded'
-                                disabled={isPending}
                             >
                                 Cancel
                             </button>
@@ -271,7 +273,7 @@ const LagChapterPage = ()=>{
                     </div>
                 )}
 
-                <div className={`grid gap-4 ${isPending ? 'opacity-60' : ''}`}>
+                <div className='grid gap-4'>
                     {isInitialLoading ? (
                         <div className='text-center text-text py-8'>
                             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
@@ -291,20 +293,17 @@ const LagChapterPage = ()=>{
                                                 onKeyDown={(e) => handleEditKeyDown(e, id)}
                                                 placeholder='Press Enter to save, Esc to cancel'
                                                 className='flex-1 p-2 bg-primary-bg text-text border border-text rounded'
-                                                disabled={isPending}
                                                 autoFocus
                                             />
                                             <button
                                                 onClick={() => handleEditChapter(id)}
-                                                disabled={isLoading || isPending}
-                                                className='bg-button-bg text-button-text p-2 rounded disabled:opacity-50'
+                                                className='bg-button-bg text-button-text p-2 rounded'
                                             >
                                                 <Save size={16} />
                                             </button>
                                             <button
                                                 onClick={cancelEdit}
                                                 className='bg-button-bg text-button-text p-2 rounded'
-                                                disabled={isPending}
                                             >
                                                 <X size={16} />
                                             </button>
@@ -323,14 +322,12 @@ const LagChapterPage = ()=>{
                                                 <button
                                                     onClick={() => startEdit(id, chapter.chapterName)}
                                                     className='bg-button-bg text-button-text p-2 rounded'
-                                                    disabled={isPending}
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDeleteChapter(id)}
-                                                    disabled={isLoading || isPending}
-                                                    className='bg-button-bg text-button-text p-2 rounded disabled:opacity-50'
+                                                    className='bg-button-bg text-button-text p-2 rounded'
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
@@ -346,7 +343,6 @@ const LagChapterPage = ()=>{
                             <button
                                 onClick={() => setIsAdding(true)}
                                 className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
-                                disabled={isPending}
                             >
                                 <Plus size={16} />
                                 Add Your First Chapter
@@ -359,7 +355,7 @@ const LagChapterPage = ()=>{
                 <div className='flex justify-center gap-2 mt-4'>
                     <button
                         onClick={() => setPage(Math.max(1, page - 1))}
-                        disabled={page === 1 || isPending}
+                        disabled={page === 1}
                         className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
                     >
                         Previous
@@ -367,8 +363,7 @@ const LagChapterPage = ()=>{
                     <span className='text-text px-4 py-2'>Page {page}</span>
                     <button
                         onClick={() => setPage(page + 1)}
-                        disabled={isPending}
-                        className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
+                        className='bg-button-bg text-button-text px-4 py-2 rounded'
                     >
                         Next
                     </button>
