@@ -93,6 +93,10 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
         return NextResponse.json({
             success:true,
             status:HttpStatusCode.CREATED,
+            data:{
+                _id:data._id,
+                chapterName:data.chapterName
+            }
         },{
             status:HttpStatusCode.CREATED
         })
