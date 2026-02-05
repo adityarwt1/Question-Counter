@@ -1,12 +1,18 @@
 "use client"
 import { useParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useOptimistic, useState, useRef } from "react";
+import { Suspense, useEffect, useOptimistic, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft, AlertTriangle, Search } from 'lucide-react'
-import Script from 'next/script'
 
 interface ChapterBody {
     _id: string
     body: string
+}
+
+// Declare MathJax type globally
+declare global {
+    interface Window {
+        MathJax: any;
+    }
 }
 
 const ChapterBodyPage = () => {
@@ -48,15 +54,54 @@ const ChapterBodyPage = () => {
         }
     )
 
+    // Load MathJax dynamically
+    useEffect(() => {
+        const loadMathJax = () => {
+            // Check if MathJax is already loaded
+            if (window.MathJax) {
+                setMathJaxLoaded(true)
+                return
+            }
+
+            // Configure MathJax
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                    processEscapes: true,
+                    processEnvironments: true
+                },
+                options: {
+                    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                },
+                startup: {
+                    ready: () => {
+                        window.MathJax.startup.defaultReady()
+                        setMathJaxLoaded(true)
+                    }
+                }
+            }
+
+            // Load MathJax script
+            const script = document.createElement('script')
+            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+            script.async = true
+            document.head.appendChild(script)
+        }
+
+        loadMathJax()
+    }, [])
+
     // Typeset MathJax when data changes
     useEffect(() => {
         if (mathJaxLoaded && optimisticData.length > 0) {
             // Small delay to ensure DOM is updated
             setTimeout(() => {
-                if ((window as any).MathJax ) {
-                    (window as any).MathJax.typesetPromise().catch((err: any) => console.log('MathJax error:', err));
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise()
+                        .catch((err: any) => console.log('MathJax error:', err))
                 }
-            }, 100);
+            }, 100)
         }
     }, [optimisticData, mathJaxLoaded, editingId])
 
@@ -231,239 +276,214 @@ const ChapterBodyPage = () => {
     }
 
     return (
-        <>
-            {/* Load MathJax */}
-            <Script
-                id="mathjax-config"
-                strategy="beforeInteractive"
-                dangerouslySetInnerHTML={{
-                    __html: `
-                        window.MathJax = {
-                            tex: {
-                                inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-                                displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
-                                processEscapes: true,
-                                processEnvironments: true
-                            },
-                            options: {
-                                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
-                            }
-                        };
-                    `
-                }}
-            />
-            <Script
-                src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-                strategy="afterInteractive"
-                onLoad={() => setMathJaxLoaded(true)}
-            />
-
-            <div className='w-full bg-primary-bg min-h-screen flex flex-col items-center p-4 relative'>
-                
-                {/* DELETE CONFIRMATION MODAL */}
-                {deleteConfirmId && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <div className="bg-card-bg border border-gray-700 w-full max-w-md rounded-lg shadow-2xl p-6 transform transition-all">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="bg-red-500/10 p-2 rounded-full">
-                                    <AlertTriangle className="text-red-500" size={24} />
-                                </div>
-                                <h3 className="text-xl font-bold text-text">Confirm Deletion</h3>
+        <div className='w-full bg-primary-bg min-h-screen flex flex-col items-center p-4 relative'>
+            
+            {/* DELETE CONFIRMATION MODAL */}
+            {deleteConfirmId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-card-bg border border-gray-700 w-full max-w-md rounded-lg shadow-2xl p-6 transform transition-all">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="bg-red-500/10 p-2 rounded-full">
+                                <AlertTriangle className="text-red-500" size={24} />
                             </div>
-                            
-                            <p className="text-gray-400 mb-6">
-                                Are you sure you want to delete this lag point? This action cannot be undone.
-                            </p>
-                            
-                            <div className="flex gap-3 justify-end">
-                                <button 
-                                    onClick={() => setDeleteConfirmId(null)}
-                                    className="px-4 py-2 rounded font-medium text-text hover:bg-white/10 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    onClick={confirmDelete}
-                                    className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 transition-colors"
-                                >
-                                    <Trash2 size={16} />
-                                    Delete
-                                </button>
-                            </div>
+                            <h3 className="text-xl font-bold text-text">Confirm Deletion</h3>
                         </div>
-                    </div>
-                )}
-
-                <div className='w-full max-w-4xl'>
-                    <div className='flex items-center gap-4 mb-4'>
-                        <button
-                            onClick={() => router.back()}
-                            className='bg-button-bg text-button-text p-2 rounded hover:bg-opacity-80'
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
-                        <h1 className='text-text text-2xl font-bold'>Lag Points</h1>
-                    </div>
-
-                    {/* Search Bar */}
-                    <form onSubmit={handleSearch} className='mb-4'>
-                        <div className='flex gap-2'>
-                            <div className='relative flex-1'>
-                                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400' size={20} />
-                                <input
-                                    type='text'
-                                    value={searchInput}
-                                    onChange={(e) => setSearchInput(e.target.value)}
-                                    placeholder='Search lag points...'
-                                    className='w-full pl-10 pr-4 py-2 bg-card-bg text-text border border-gray-700 rounded focus:border-button-bg outline-none'
-                                />
-                            </div>
-                            <button
-                                type='submit'
-                                className='bg-button-bg text-button-text px-6 py-2 rounded hover:bg-opacity-80 transition-colors'
-                                disabled={isSearching}
+                        
+                        <p className="text-gray-400 mb-6">
+                            Are you sure you want to delete this lag point? This action cannot be undone.
+                        </p>
+                        
+                        <div className="flex gap-3 justify-end">
+                            <button 
+                                onClick={() => setDeleteConfirmId(null)}
+                                className="px-4 py-2 rounded font-medium text-text hover:bg-white/10 transition-colors"
                             >
-                                {isSearching ? 'Searching...' : 'Search'}
+                                Cancel
                             </button>
-                            {searchQuery && (
-                                <button
-                                    type='button'
-                                    onClick={handleClearSearch}
-                                    className='bg-gray-700 text-text px-4 py-2 rounded hover:bg-gray-600 transition-colors'
-                                >
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        {searchQuery && (
-                            <p className='text-sm text-gray-400 mt-2'>
-                                Searching for: <span className='text-button-bg font-medium'>"{searchQuery}"</span>
-                            </p>
-                        )}
-                    </form>
-
-                    <div className='flex justify-end mb-4'>
-                        <button
-                            onClick={() => setIsAdding(!isAdding)}
-                            className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
-                        >
-                            <Plus size={16} />
-                            Add Lag Point
-                        </button>
-                    </div>
-
-                    {isAdding && (
-                        <div className='bg-card-bg p-4 rounded mb-4 border border-gray-700'>
-                            <textarea
-                                value={newBody}
-                                onChange={(e) => setNewBody(e.target.value)}
-                                placeholder='Enter lag point (use $ for inline math: $x^2$, or $$ for display math: $$x = \frac{-b}{2a}$$)'
-                                className='w-full p-2 bg-primary-bg text-text border border-gray-600 rounded focus:border-button-bg outline-none'
-                                rows={4}
-                                autoFocus
-                            />
-                            <div className='flex gap-2 mt-2'>
-                                <button onClick={handleAddBody} className='bg-button-bg text-button-text px-4 py-2 rounded'>Add</button>
-                                <button onClick={() => setIsAdding(false)} className='bg-gray-700 text-text px-4 py-2 rounded'>Cancel</button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className='grid gap-4'>
-                        {isInitialLoading ? (
-                            <div className='text-center text-text py-8'>
-                                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
-                                Loading...
-                            </div>
-                        ) : optimisticData && optimisticData.length > 0 ? (
-                            optimisticData.map((item) => (
-                                <div key={item._id} className='bg-card-bg p-4 rounded border border-transparent hover:border-gray-700 transition-all'>
-                                    {editingId === item._id ? (
-                                        <div>
-                                            <textarea
-                                                value={editingBody}
-                                                onChange={(e) => setEditingBody(e.target.value)}
-                                                placeholder='Use $ for inline math or $$ for display math'
-                                                className='w-full p-2 bg-primary-bg text-text border border-text rounded'
-                                                rows={4}
-                                                autoFocus
-                                            />
-                                            <div className='flex gap-2 mt-2'>
-                                                <button onClick={() => handleEditBody(item._id)} className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'><Save size={16} /> Save</button>
-                                                <button onClick={() => setEditingId(null)} className='bg-gray-700 text-text px-4 py-2 rounded flex items-center gap-2'><X size={16} /> Cancel</button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content'>
-                                                {item.body}
-                                            </div>
-                                            <div className='flex gap-3 border-t border-gray-800 pt-3'>
-                                                <button
-                                                    onClick={() => startEdit(item._id, item.body)}
-                                                    className='text-gray-400 hover:text-button-bg flex items-center gap-1 text-sm transition-colors'
-                                                >
-                                                    <Edit2 size={14} /> Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteConfirmId(item._id)}
-                                                    className='text-gray-400 hover:text-red-500 flex items-center gap-1 text-sm transition-colors'
-                                                >
-                                                    <Trash2 size={14} /> Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        ) : (
-                            <div className='text-center text-text py-12 bg-card-bg rounded-lg border border-dashed border-gray-700'>
-                                <p className='mb-4 opacity-60'>
-                                    {searchQuery ? `No results found for "${searchQuery}"` : 'No lag points found.'}
-                                </p>
-                                {!searchQuery && (
-                                    <button onClick={() => setIsAdding(true)} className='bg-button-bg text-button-text px-4 py-2 rounded inline-flex items-center gap-2'>
-                                        <Plus size={16} /> Add First Point
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Pagination */}
-                    <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 border-t border-gray-800 pt-6'>
-                        <div className='flex items-center gap-2 text-text'>
-                            <span className="text-sm opacity-60">Show:</span>
-                            <select
-                                value={limit}
-                                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
-                                className='bg-card-bg text-text border border-gray-700 rounded px-2 py-1 outline-none'
+                            <button 
+                                onClick={confirmDelete}
+                                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white font-medium flex items-center gap-2 transition-colors"
                             >
-                                {[5, 10, 20, 50].map(v => <option key={v} value={v}>{v}</option>)}
-                            </select>
-                        </div>
-
-                        <div className='flex items-center gap-4'>
-                            <button
-                                onClick={() => setPage(Math.max(1, page - 1))}
-                                disabled={page === 1}
-                                className='bg-card-bg text-text px-4 py-2 rounded disabled:opacity-30 border border-gray-700 hover:bg-gray-800 transition-colors'
-                            >
-                                Previous
-                            </button>
-                            <span className='text-text font-medium'>Page {page}</span>
-                            <button
-                                onClick={() => setPage(page + 1)}
-                                disabled={data.length < limit}
-                                className='bg-card-bg text-text px-4 py-2 rounded disabled:opacity-30 border border-gray-700 hover:bg-gray-800 transition-colors'
-                            >
-                                Next
+                                <Trash2 size={16} />
+                                Delete
                             </button>
                         </div>
                     </div>
                 </div>
+            )}
+
+            <div className='w-full max-w-4xl'>
+                <div className='flex items-center gap-4 mb-4'>
+                    <button
+                        onClick={() => router.back()}
+                        className='bg-button-bg text-button-text p-2 rounded hover:bg-opacity-80'
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <h1 className='text-text text-2xl font-bold'>Lag Points</h1>
+                </div>
+
+                {/* Search Bar */}
+                <form onSubmit={handleSearch} className='mb-4'>
+                    <div className='flex gap-2'>
+                        <div className='relative flex-1'>
+                            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400' size={20} />
+                            <input
+                                type='text'
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                placeholder='Search lag points...'
+                                className='w-full pl-10 pr-4 py-2 bg-card-bg text-text border border-gray-700 rounded focus:border-button-bg outline-none'
+                            />
+                        </div>
+                        <button
+                            type='submit'
+                            className='bg-button-bg text-button-text px-6 py-2 rounded hover:bg-opacity-80 transition-colors'
+                            disabled={isSearching}
+                        >
+                            {isSearching ? 'Searching...' : 'Search'}
+                        </button>
+                        {searchQuery && (
+                            <button
+                                type='button'
+                                onClick={handleClearSearch}
+                                className='bg-gray-700 text-text px-4 py-2 rounded hover:bg-gray-600 transition-colors'
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                    {searchQuery && (
+                        <p className='text-sm text-gray-400 mt-2'>
+                            Searching for: <span className='text-button-bg font-medium'>"{searchQuery}"</span>
+                        </p>
+                    )}
+                </form>
+
+                {/* Math Syntax Help */}
+              
+
+                <div className='flex justify-end mb-4'>
+                    <button
+                        onClick={() => setIsAdding(!isAdding)}
+                        className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'
+                    >
+                        <Plus size={16} />
+                        Add Lag Point
+                    </button>
+                </div>
+
+                {isAdding && (
+                    <div className='bg-card-bg p-4 rounded mb-4 border border-gray-700'>
+                        <textarea
+                            value={newBody}
+                            onChange={(e) => setNewBody(e.target.value)}
+                            placeholder='Enter lag point (use $ for inline math, $$ for display math)'
+                            className='w-full p-2 bg-primary-bg text-text border border-gray-600 rounded focus:border-button-bg outline-none'
+                            rows={4}
+                            autoFocus
+                        />
+                        <div className='flex gap-2 mt-2'>
+                            <button onClick={handleAddBody} className='bg-button-bg text-button-text px-4 py-2 rounded'>Add</button>
+                            <button onClick={() => setIsAdding(false)} className='bg-gray-700 text-text px-4 py-2 rounded'>Cancel</button>
+                        </div>
+                    </div>
+                )}
+
+                <div className='grid gap-4'>
+                    {isInitialLoading ? (
+                        <div className='text-center text-text py-8'>
+                            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
+                            Loading...
+                        </div>
+                    ) : optimisticData && optimisticData.length > 0 ? (
+                        optimisticData.map((item) => (
+                            <div key={item._id} className='bg-card-bg p-4 rounded border border-transparent hover:border-gray-700 transition-all'>
+                                {editingId === item._id ? (
+                                    <div>
+                                        <textarea
+                                            value={editingBody}
+                                            onChange={(e) => setEditingBody(e.target.value)}
+                                            placeholder='Use $ for inline math or $$ for display math'
+                                            className='w-full p-2 bg-primary-bg text-text border border-text rounded'
+                                            rows={4}
+                                            autoFocus
+                                        />
+                                        <div className='flex gap-2 mt-2'>
+                                            <button onClick={() => handleEditBody(item._id)} className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'><Save size={16} /> Save</button>
+                                            <button onClick={() => setEditingId(null)} className='bg-gray-700 text-text px-4 py-2 rounded flex items-center gap-2'><X size={16} /> Cancel</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content'>
+                                            {item.body}
+                                        </div>
+                                        <div className='flex gap-3 border-t border-gray-800 pt-3'>
+                                            <button
+                                                onClick={() => startEdit(item._id, item.body)}
+                                                className='text-gray-400 hover:text-button-bg flex items-center gap-1 text-sm transition-colors'
+                                            >
+                                                <Edit2 size={14} /> Edit
+                                            </button>
+                                            <button
+                                                onClick={() => setDeleteConfirmId(item._id)}
+                                                className='text-gray-400 hover:text-red-500 flex items-center gap-1 text-sm transition-colors'
+                                            >
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    ) : (
+                        <div className='text-center text-text py-12 bg-card-bg rounded-lg border border-dashed border-gray-700'>
+                            <p className='mb-4 opacity-60'>
+                                {searchQuery ? `No results found for "${searchQuery}"` : 'No lag points found.'}
+                            </p>
+                            {!searchQuery && (
+                                <button onClick={() => setIsAdding(true)} className='bg-button-bg text-button-text px-4 py-2 rounded inline-flex items-center gap-2'>
+                                    <Plus size={16} /> Add First Point
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Pagination */}
+                <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 border-t border-gray-800 pt-6'>
+                    <div className='flex items-center gap-2 text-text'>
+                        <span className="text-sm opacity-60">Show:</span>
+                        <select
+                            value={limit}
+                            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                            className='bg-card-bg text-text border border-gray-700 rounded px-2 py-1 outline-none'
+                        >
+                            {[5, 10, 20, 50].map(v => <option key={v} value={v}>{v}</option>)}
+                        </select>
+                    </div>
+
+                    <div className='flex items-center gap-4'>
+                        <button
+                            onClick={() => setPage(Math.max(1, page - 1))}
+                            disabled={page === 1}
+                            className='bg-card-bg text-text px-4 py-2 rounded disabled:opacity-30 border border-gray-700 hover:bg-gray-800 transition-colors'
+                        >
+                            Previous
+                        </button>
+                        <span className='text-text font-medium'>Page {page}</span>
+                        <button
+                            onClick={() => setPage(page + 1)}
+                            disabled={data.length < limit}
+                            className='bg-card-bg text-text px-4 py-2 rounded disabled:opacity-30 border border-gray-700 hover:bg-gray-800 transition-colors'
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
             </div>
-        </>
+        </div>
     )
 }
 
@@ -476,6 +496,3 @@ const ChapterBodyContent = () => {
 }
 
 export default ChapterBodyContent
-
-// Add this to your global CSS or create a separate CSS module
-// Add to globals.css or component CSS
