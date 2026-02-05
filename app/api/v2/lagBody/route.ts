@@ -7,65 +7,70 @@ import LagBody from "@/models/lag/LagBody";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req:NextRequest):Promise<NextResponse<LagChapterInterface>> {
+export async function GET(req: NextRequest): Promise<NextResponse<LagChapterInterface>> {
     try {
         const authenticatedUser = await VerifyToken(req)
         const searchParams = req.nextUrl.searchParams;
         const lagChapterId = searchParams.get("lagChapterId")
-        const page = Number(searchParams.get("page"))|| 1;
+        const page = Number(searchParams.get("page")) || 1;
         const limit = Number(searchParams.get("limit")) || 10;
-        const skip = (page -1)* limit
+        const skip = (page - 1) * limit
+        const query = searchParams.get("q") // This is your search string
 
-
-        if(!authenticatedUser.isVerified || !authenticatedUser.user?._id){
+        if (!authenticatedUser.isVerified || !authenticatedUser.user?._id) {
             return Unauthorized()
         }
 
-        if(!lagChapterId){
-            return BadRequest("lagChapterId not provided in body!")
+        if (!lagChapterId) {
+            return BadRequest("lagChapterId not provided in query params!")
         }
-        const isConnected = await mongoconnect()
 
-        if(!isConnected){
+        const isConnected = await mongoconnect()
+        if (!isConnected) {
             return FailedToConnectDatabse()
         }
-        
+
+        // 1. Define the base match criteria
+        const matchCriteria: any = {
+            lagChapterId: new mongoose.Types.ObjectId(lagChapterId)
+        };
+
+        // 2. If a search query exists, add a regex filter for the 'body' field
+        if (query) {
+            matchCriteria.body = { $regex: query, $options: "i" }; // "i" makes it case-insensitive
+        }
+
         const data = await LagBody.aggregate([
             {
-                $match:{
-                    lagChapterId:new mongoose.Types.ObjectId(lagChapterId)
-                }
-            },{
-                $sort:{
-                    createdAt: -1
-                }
+                $match: matchCriteria
             },
             {
-                $skip:skip
-            },{
-                $limit:limit
-            },{
-                $sort:{
-                    createdAt: -1
-                }
-            },{
-                $project:{
-                    _id:1,
-                    body:1
+                $sort: { createdAt: -1 }
+            },
+            {
+                $skip: skip
+            },
+            {
+                $limit: limit
+            },
+            {
+                $project: {
+                    _id: 1,
+                    body: 1
                 }
             },
         ])
 
         return NextResponse.json({
-            status:HttpStatusCode.OK,
-            success:true,
+            status: HttpStatusCode.OK,
+            success: true,
             data,
             skip,
             limit,
             page
         })
     } catch (error) {
-        console.log(error)   
+        console.log(error)
         return InternalServerIssue(error)
     }
 }

@@ -1,6 +1,6 @@
 "use client"
 import { useParams, useRouter } from "next/navigation";
-import React, { Suspense, useEffect, useOptimistic, useState } from "react";
+import  { Suspense, useEffect, useOptimistic, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft, AlertTriangle } from 'lucide-react'
 
 interface ChapterBody {
