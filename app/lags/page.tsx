@@ -2,7 +2,7 @@
 import { LagResponoseData, LagResponseDataInterface } from '@/interface/Lags/lagresponse'
 import { useRouter } from 'next/navigation'
 import React, { Suspense, useEffect, useOptimistic, useState, useTransition } from 'react'
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 
 const LagPage = ()=>{
@@ -17,7 +17,7 @@ const LagPage = ()=>{
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
-   
+    const [limit, setLimit ] = useState<number>(10)
     const [optimisticData, setOptimisticData] = useOptimistic(
         lagData,
         (state, newData: { action: 'add' | 'edit' | 'delete', item?: LagResponseDataInterface, _id?: string }) => {
@@ -42,7 +42,7 @@ const LagPage = ()=>{
         if(typeof window !== "undefined"){
             token = localStorage.getItem(process.env.NEXT_PUBLIC_COOKIE_NAME as string)
         }
-        const response = await fetch(`${process.env.NEXT_PUBLIC_LAGS}?page=${currentPage}&limit=10`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_LAGS}?page=${currentPage}&limit=${limit}`, {
             method:'GET',
             headers:{
                 "Authorization":`Bearer ${token}`
@@ -346,23 +346,46 @@ const LagPage = ()=>{
                     )}
                 </div>
 
-                {/* Simple pagination */}
-                <div className='flex justify-center gap-2 mt-4'>
-                    <button
-                        onClick={() => setPage(Math.max(1, page - 1))}
-                        disabled={page === 1 || isPending}
-                        className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
-                    >
-                        Previous
-                    </button>
-                    <span className='text-text px-4 py-2'>Page {page}</span>
-                    <button
-                        onClick={() => setPage(page + 1)}
-                        disabled={isPending}
-                        className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
-                    >
-                        Next
-                    </button>
+                {/* Pagination & Limit Controller */}
+                <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-card-bg p-3 rounded border border-gray-800'>
+                    <div className='flex items-center gap-3 text-text text-sm'>
+                        <span>Rows per page:</span>
+                        <select
+                            value={limit}
+                            onChange={(e) => {
+                            setLimit(Number(e.target.value));
+                            setPage(1); // Reset to page 1 when limit changes
+                        }}
+                            className='bg-primary-bg border border-gray-700 rounded px-2 py-1 outline-none focus:border-button-bg'
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                    </div>
+
+                    <div className='flex items-center gap-4'>
+                        <button
+                            onClick={() => setPage(Math.max(1, page - 1))}
+                            disabled={page === 1}
+                            className='text-text disabled:opacity-30 hover:bg-primary-bg p-2 rounded-full transition-colors'
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                        
+                        <span className='text-text font-semibold bg-primary-bg px-4 py-1 rounded border border-gray-700'>
+                            Page {page}
+                        </span>
+
+                        <button
+                            onClick={() => setPage(page + 1)}
+                            disabled={lagData.length < limit}
+                            className='text-text disabled:opacity-30 hover:bg-primary-bg p-2 rounded-full transition-colors'
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

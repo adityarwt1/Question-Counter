@@ -19,7 +19,7 @@ const ChapterBodyPage = ()=>{
     const [editingBody, setEditingBody] = useState('')
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const router = useRouter()
-    
+    const [limit , setLimit ]= useState<number>(10)
     const [optimisticData, setOptimisticData] = useOptimistic(
         data,
         (state, newData: { action: 'add' | 'edit' | 'delete', item?: ChapterBody, _id?: string }) => {
@@ -47,7 +47,7 @@ const ChapterBodyPage = ()=>{
         if(!token){
             return router.replace('/signin')
         }
-        const response = await fetch(`${process.env.NEXT_PUBLIC_LAG_BODY}?lagChapterId=${id}&page=${currentPage}&limit=10`,{
+        const response = await fetch(`${process.env.NEXT_PUBLIC_LAG_BODY}?lagChapterId=${id}&page=${currentPage}&limit=${limit}`,{
             method:'GET',
             headers:{
                 "Authorization":`Bearer ${token}`
@@ -327,23 +327,51 @@ const ChapterBodyPage = ()=>{
                     )}
                 </div>
 
-                {/* Simple pagination */}
-                <div className='flex justify-center gap-2 mt-4'>
-                    <button
-                        onClick={() => setPage(Math.max(1, page - 1))}
-                        disabled={page === 1}
-                        className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50'
-                    >
-                        Previous
-                    </button>
-                    <span className='text-text px-4 py-2'>Page {page}</span>
-                    <button
-                        onClick={() => setPage(page + 1)}
-                        className='bg-button-bg text-button-text px-4 py-2 rounded'
-                    >
-                        Next
-                    </button>
-                </div>
+               {/* Pagination & Limit Controller */}
+<div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 border-t border-gray-700 pt-4'>
+    
+    {/* Limit Selector */}
+    <div className='flex items-center gap-2 text-text'>
+        <label htmlFor="limit" className="text-sm">Items per page:</label>
+        <select
+            id="limit"
+            value={limit}
+            onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1); // Reset to page 1 when limit changes
+            }}
+            className='bg-card-bg text-text border border-gray-600 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-button-bg'
+        >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+        </select>
+    </div>
+
+    {/* Page Navigation */}
+    <div className='flex items-center gap-2'>
+        <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+            className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50 transition-opacity'
+        >
+            Previous
+        </button>
+        
+        <span className='text-text font-medium px-2'>
+            Page {page}
+        </span>
+
+        <button
+            onClick={() => setPage(page + 1)}
+            disabled={data.length < limit} // Disable if current data is less than limit
+            className='bg-button-bg text-button-text px-4 py-2 rounded disabled:opacity-50 transition-opacity'
+        >
+            Next
+        </button>
+    </div>
+</div>
             </div>
         </div>
     )
