@@ -10,11 +10,11 @@ const ChapterSkeleton = () => {
     return (
         <div className='bg-card-bg p-4 rounded flex items-center justify-between animate-pulse'>
             <div className='flex-1'>
-                <div className='h-6 bg-gray-700 rounded w-2/3'></div>
+                <div className='h-6 border-2 bg-[#252525] border-white/10 rounded-full w-2/3'></div>
             </div>
             <div className='flex gap-2'>
-                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
-                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
+                <div className='border-2 bg-[#252525] border-white/10 p-2 rounded w-9 h-9'></div>
+                <div className='border-2 bg-[#252525] border-white/10 p-2 rounded w-9 h-9'></div>
             </div>
         </div>
     )
@@ -429,11 +429,11 @@ const LagChapterPageContent = ()=>{
             <div className='w-full bg-primary-bg min-h-screen flex flex-col items-center p-4'>
                 <div className='w-full max-w-4xl'>
                     <div className='flex items-center gap-4 mb-4'>
-                        <div className='bg-gray-700 p-2 rounded w-10 h-10 animate-pulse'></div>
-                        <div className='h-8 bg-gray-700 rounded w-32 animate-pulse'></div>
+                        <div className='border-2 bg-[#252525] border-white/10 p-2 rounded w-10 h-10 animate-pulse'></div>
+                        <div className='h-8 border-2 bg-[#252525] border-white/10 rounded w-32 animate-pulse'></div>
                     </div>
                     <div className='flex justify-end mb-4'>
-                        <div className='bg-gray-700 rounded h-10 w-36 animate-pulse'></div>
+                        <div className='border-2 bg-[#252525] border-white/10 rounded h-10 w-36 animate-pulse'></div>
                     </div>
                     <SkeletonLoader count={5} />
                 </div>

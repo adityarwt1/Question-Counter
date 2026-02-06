@@ -20,9 +20,9 @@ const LagPointSkeleton = () => {
     return (
         <div className='bg-card-bg p-4 rounded border border-transparent animate-pulse'>
             <div className='mb-4 space-y-2'>
-                <div className='h-5 bg-[#252525] rounded w-full border-2 border-white/10'></div>
-                <div className='h-5 bg-[#252525]  rounded w-5/6 border-2 border-white/10'></div>
-                <div className='h-5 bg-[#252525]  rounded w-4/6 border-2 border-white/10'></div>
+                <div className='h-5  w-full border-2 bg-[#252525] border-white/10 rounded-full'></div>
+                <div className='h-5 bg-[#252525]  w-5/6 border-2 border-white/10 rounded-full'></div>
+                <div className='h-5 bg-[#252525]  w-4/6 border-2 border-white/10 rounded-full'></div>
             </div>
             <div className='flex gap-3 border-t border-[#252525] pt-3'>
                 <div className='h-5 bg-[#252525]  rounded w-16 border-2  border-white/10'></div>

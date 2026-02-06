@@ -10,11 +10,11 @@ const SubjectSkeleton = () => {
     return (
         <div className='bg-card-bg p-4 rounded flex items-center justify-between animate-pulse'>
             <div className='flex-1'>
-                <div className='h-6 bg-gray-700 rounded w-3/4'></div>
+                <div className='h-6 border-2 bg-[#252525] border-white/10 rounded-full w-3/4 '></div>
             </div>
             <div className='flex gap-2'>
-                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
-                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
+                <div className='border-2 bg-[#252525] border-white/10  p-2 rounded w-9 h-9'></div>
+                <div className='border-2 bg-[#252525] border-white/10 - p-2 rounded w-9 h-9'></div>
             </div>
         </div>
     )
