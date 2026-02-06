@@ -40,7 +40,7 @@ export const Unauthorized = async ()=> NextResponse.json<StanderedResponse>({
     status:HttpStatusCode.UNAUTHORIZED,
     success:false,
     error:HttpStatusText.UNAUTHORIZED,
-    message:"User aunthorized!"
+    message:"User unathorized!"
 },{
     status:HttpStatusCode.UNAUTHORIZED
 })
@@ -94,3 +94,10 @@ export const VerifyToken = async (req:NextRequest) : Promise<{
         }
     }   
 }
+
+export const notFound =async (message?:string)=> NextResponse.json<StanderedResponse>({
+    status:HttpStatusCode.NOT_FOUND,
+    success:false,
+    error:HttpStatusText.NOT_FOUND,
+    message: message || "not found"
+})

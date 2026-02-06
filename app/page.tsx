@@ -1,55 +1,95 @@
 "use client";
 
 import { SubjectInterface } from "@/interface/Subject/Subject";
-import { SubjectAndQuestionCount } from "@/interface/Summary/totalQuestion";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 type CountType = keyof Pick<
   SubjectInterface,
   "dppCount" | "classCount" | "pyqCount" | "bookCount" | "chatGptCount"
 >;
 
+// Skeleton Loader Component
+const SubjectCardSkeleton = () => {
+  return (
+    <div className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 animate-pulse">
+      <div className="flex justify-between mb-3">
+        <div className="h-6 bg-zinc-700 rounded w-32"></div>
+        <div className="h-6 bg-zinc-700 rounded w-8"></div>
+      </div>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex justify-between items-center mt-2">
+          <div className="h-5 bg-zinc-700 rounded w-20"></div>
+          <div className="flex gap-2">
+            <div className="w-8 h-8 bg-zinc-700 rounded"></div>
+            <div className="w-8 h-8 bg-zinc-700 rounded"></div>
+            <div className="w-8 h-8 bg-zinc-700 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const SkeletonLoader = ({ count = 3 }: { count?: number }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {Array.from({ length: count }).map((_, index) => (
+        <SubjectCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+};
+
 export default function SubjectPage() {
   const [subjects, setSubjects] = useState<SubjectInterface[]>([]);
-  const [summaryData, setSummaryData] = useState<SubjectAndQuestionCount[]>([]);
-  const [totalQuestion, setTotalQuestions] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const router = useRouter();
 
+  // Debounce tracking
+  const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const pendingUpdates = useRef<Map<string, number>>(new Map());
+
   useEffect(() => {
     fetchSubjects();
-    fetchSummary();
   }, []);
 
-  /* ---------------- FETCH SUMMARY ---------------- */
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      debounceTimers.current.forEach(timer => clearTimeout(timer));
+      debounceTimers.current.clear();
+    };
+  }, []);
 
-  const fetchSummary = async () => {
-    const token = localStorage.getItem(
-      process.env.NEXT_PUBLIC_COOKIE_NAME as string
-    );
+  /* ---------------- CALCULATE TOTAL QUESTIONS FROM SUBJECTS ---------------- */
+  const calculateTotalQuestions = (subjectsList: SubjectInterface[]): number => {
+    return subjectsList.reduce((total, subject) => {
+      return total + 
+        subject.dppCount + 
+        subject.classCount + 
+        subject.pyqCount + 
+        subject.bookCount + 
+        subject.chatGptCount;
+    }, 0);
+  };
 
-    if (!token) return router.replace("/signin");
+  const totalQuestion = calculateTotalQuestions(subjects);
 
-    const res = await fetch("/api/v1/questionCount", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if(res.status === 401) {
-      return router.replace("/signin");
-    }
-    const data = await res.json();
-
-    setSummaryData(data.subjects[0].subjects || []);
-    setTotalQuestions(data.subjects[0].total[0]?.totalCount || 0);
+  /* ---------------- CALCULATE SUBJECT TOTAL ---------------- */
+  const getSubjectTotal = (subject: SubjectInterface): number => {
+    return subject.dppCount + 
+           subject.classCount + 
+           subject.pyqCount + 
+           subject.bookCount + 
+           subject.chatGptCount;
   };
 
   /* ---------------- FETCH SUBJECTS ---------------- */
-
   const fetchSubjects = async () => {
     setIsLoading(true);
     try {
@@ -73,155 +113,151 @@ export default function SubjectPage() {
     }
   };
 
-  /* ---------------- SUMMARY UPDATE HELPERS ---------------- */
+  /* ---------------- DEBOUNCED API CALL ---------------- */
+  const executeApiUpdate = async (subjectId: string, type: CountType, count: number) => {
+    try {
+      const token = localStorage.getItem(
+        process.env.NEXT_PUBLIC_COOKIE_NAME as string
+      );
 
-  // ⭐ NEW
-  const updateSummary = (subjectName: string, delta: number) => {
-    setSummaryData(prev =>
-      prev.map(s =>
-        s.subjectName === subjectName
-          ? { ...s, count: s.count + delta }
-          : s
-      )
-    );
-    setTotalQuestions(prev => prev + delta);
+      const action = count > 0 ? 'increment' : 'decrement';
+      const absoluteCount = Math.abs(count);
+
+      const res = await fetch(
+        `/api/v1/incAndDcs?_id=${subjectId}&type=${type}&action=${action}&count=${absoluteCount}`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to update');
+      
+      return true;
+    } catch (err) {
+      console.error('API Update Error:', err);
+      return false;
+    }
   };
 
-  /* ---------------- INCREMENT ---------------- */
-
-  const handleIncrement = async (subjectId: string, type: CountType) => {
+  /* ---------------- DEBOUNCED COUNT CHANGE ---------------- */
+  const handleCountChange = useCallback((subjectId: string, type: CountType, delta: number) => {
     const subject = subjects.find(s => s._id === subjectId);
     if (!subject) return;
 
-    // ⭐ OPTIMISTIC UI
+    // Don't allow decrement below 0
+    const newValue = subject[type] + delta;
+    if (newValue < 0) return;
+
+    // ⭐ IMMEDIATE OPTIMISTIC UI UPDATE
     setSubjects(prev =>
       prev.map(s =>
-        s._id === subjectId ? { ...s, [type]: s[type] + 1 } : s
+        s._id === subjectId ? { ...s, [type]: newValue } : s
       )
     );
-    updateSummary(subject.subjectName, +1);
 
-    try {
-      const token = localStorage.getItem(
-        process.env.NEXT_PUBLIC_COOKIE_NAME as string
-      );
-
-      const res = await fetch(
-        `/api/v1/incAndDcs?_id=${subjectId}&type=${type}&action=increment`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const data = await res.json();
-      if (!data.success) throw new Error();
-    } catch {
-      // ❌ ROLLBACK
-      setSubjects(prev =>
-        prev.map(s =>
-          s._id === subjectId ? { ...s, [type]: s[type] - 1 } : s
-        )
-      );
-      updateSummary(subject.subjectName, -1);
-      setError("Failed to increment");
+    // ⭐ DEBOUNCED API CALL
+    const key = `${subjectId}-${type}`;
+    
+    // Clear existing timer for this subject-type combination
+    const existingTimer = debounceTimers.current.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
     }
+
+    // Track pending updates (accumulate deltas)
+    const currentPending = pendingUpdates.current.get(key) || 0;
+    const newPending = currentPending + delta;
+    pendingUpdates.current.set(key, newPending);
+
+    // Set new debounce timer (500ms delay)
+    const timer = setTimeout(async () => {
+      const pendingDelta = pendingUpdates.current.get(key);
+      if (pendingDelta !== undefined && pendingDelta !== 0) {
+        const success = await executeApiUpdate(subjectId, type, pendingDelta);
+        
+        if (!success) {
+          // ❌ ROLLBACK on failure
+          setSubjects(prev =>
+            prev.map(s =>
+              s._id === subjectId ? { ...s, [type]: s[type] - pendingDelta } : s
+            )
+          );
+          setError(`Failed to ${pendingDelta > 0 ? 'increment' : 'decrement'} ${type}`);
+          
+          // Auto-clear error after 3 seconds
+          setTimeout(() => setError(''), 3000);
+        }
+        
+        pendingUpdates.current.delete(key);
+      }
+      debounceTimers.current.delete(key);
+    }, 500);
+
+    debounceTimers.current.set(key, timer);
+  }, [subjects]);
+
+  const handleIncrement = (subjectId: string, type: CountType) => {
+    handleCountChange(subjectId, type, 1);
   };
 
-  /* ---------------- DECREMENT ---------------- */
-
-  const handleDecrement = async (subjectId: string, type: CountType) => {
-    const subject = subjects.find(s => s._id === subjectId);
-    if (!subject || subject[type] <= 0) return;
-
-    // ⭐ OPTIMISTIC UI
-    setSubjects(prev =>
-      prev.map(s =>
-        s._id === subjectId ? { ...s, [type]: s[type] - 1 } : s
-      )
-    );
-    updateSummary(subject.subjectName, -1);
-
-    try {
-      const token = localStorage.getItem(
-        process.env.NEXT_PUBLIC_COOKIE_NAME as string
-      );
-
-      const res = await fetch(
-        `/api/v1/incAndDcs?_id=${subjectId}&type=${type}&action=decrement`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const data = await res.json();
-      if (!data.success) throw new Error();
-    } catch {
-      // ❌ ROLLBACK
-      setSubjects(prev =>
-        prev.map(s =>
-          s._id === subjectId ? { ...s, [type]: s[type] + 1 } : s
-        )
-      );
-      updateSummary(subject.subjectName, +1);
-      setError("Failed to decrement");
-    }
+  const handleDecrement = (subjectId: string, type: CountType) => {
+    handleCountChange(subjectId, type, -1);
   };
 
-  /* ---------------- UI ---------------- */
-
+  /* ---------------- ADD SUBJECT ---------------- */
   const handleAddSubject = async () => {
-  if (!newSubjectName.trim()) return;
+    if (!newSubjectName.trim()) return;
 
-  setIsAdding(true);
-  try {
-    const token = localStorage.getItem(
-      process.env.NEXT_PUBLIC_COOKIE_NAME as string
-    );
-    if (!token) return router.replace("/signin");
+    setIsAdding(true);
+    try {
+      const token = localStorage.getItem(
+        process.env.NEXT_PUBLIC_COOKIE_NAME as string
+      );
+      if (!token) return router.replace("/signin");
 
-    const res = await fetch("/api/v1/subject", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ subjectName: newSubjectName }),
-    });
-  
-    if(res.status === 401) {
-      return router.replace("/signin");
+      const res = await fetch("/api/v1/subject", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ subjectName: newSubjectName }),
+      });
+    
+      if(res.status === 401) {
+        return router.replace("/signin");
+      }
+      const data = await res.json();
+      if (!data.success) throw new Error();
+
+      setShowAddModal(false);
+      setNewSubjectName("");
+      fetchSubjects(); // Refresh subjects
+    } catch {
+      setError("Failed to add subject");
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsAdding(false);
     }
-    const data = await res.json();
-    if (!data.success) throw new Error();
-
-    setShowAddModal(false);
-    setNewSubjectName("");
-    fetchSubjects();      // subjects refresh
-    fetchSummary();       // summary refresh
-  } catch {
-    setError("Failed to add subject");
-  } finally {
-    setIsAdding(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-zinc-900 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-    <h1 className="text-3xl font-bold text-zinc-200">
-      My Subjects
-    </h1>
+          <h1 className="text-3xl font-bold text-zinc-200">
+            My Subjects
+          </h1>
 
-    <button
-      onClick={() => setShowAddModal(true)}
-      className="px-6 py-3 rounded-lg font-medium bg-zinc-200 text-zinc-900 hover:opacity-90"
-    >
-      + Add Subject
-    </button>
-  </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-6 py-3 rounded-lg font-medium bg-zinc-200 text-zinc-900 hover:opacity-90 transition-opacity"
+          >
+            + Add Subject
+          </button>
+        </div>
 
         <h1 className="text-3xl font-bold text-center text-zinc-200 mb-6">
           Total Questions: {Number(totalQuestion).toLocaleString()}/15,000
@@ -240,59 +276,73 @@ export default function SubjectPage() {
           </div>
         </div>
 
-    {showAddModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-zinc-800 p-6 rounded-lg w-full max-w-md border border-zinc-700">
-      <h2 className="text-xl font-semibold text-zinc-200 mb-4">
-        Add New Subject
-      </h2>
+        {/* Add Subject Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-zinc-800 p-6 rounded-lg w-full max-w-md border border-zinc-700">
+              <h2 className="text-xl font-semibold text-zinc-200 mb-4">
+                Add New Subject
+              </h2>
 
-      <input
-        value={newSubjectName}
-        onChange={e => setNewSubjectName(e.target.value)}
-        className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded mb-4 text-zinc-200"
-        placeholder="e.g. Physics"
-        disabled={isAdding}
-      />
+              <input
+                value={newSubjectName}
+                onChange={e => setNewSubjectName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddSubject()}
+                className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded mb-4 text-zinc-200 focus:border-zinc-500 outline-none"
+                placeholder="e.g. Physics"
+                disabled={isAdding}
+                autoFocus
+              />
 
-      <div className="flex gap-3">
-        <button
-          onClick={() => setShowAddModal(false)}
-          className="flex-1 py-2 bg-zinc-700 rounded text-zinc-200"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleAddSubject}
-          disabled={isAdding}
-          className="flex-1 py-2 bg-zinc-200 text-zinc-900 rounded"
-        >
-          {isAdding ? "Adding..." : "Add"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setNewSubjectName("");
+                  }}
+                  className="flex-1 py-2 bg-zinc-700 rounded text-zinc-200 hover:bg-zinc-600 transition-colors"
+                  disabled={isAdding}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddSubject}
+                  disabled={isAdding || !newSubjectName.trim()}
+                  className="flex-1 py-2 bg-zinc-200 text-zinc-900 rounded hover:bg-zinc-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAdding ? "Adding..." : "Add"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
+        {/* Subjects Grid */}
         {isLoading ? (
-          <p className="text-center text-zinc-400">Loading...</p>
+          <SkeletonLoader count={6} />
+        ) : subjects.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-zinc-400 mb-4">No subjects yet. Add your first subject to get started!</p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-6 py-3 rounded-lg font-medium bg-zinc-200 text-zinc-900 hover:opacity-90"
+            >
+              + Add Your First Subject
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {subjects.map(subject => (
               <div
                 key={subject._id}
-                className="bg-zinc-800 p-5 rounded-lg border border-zinc-700"
+                className="bg-zinc-800 p-5 rounded-lg border border-zinc-700 hover:border-zinc-600 transition-colors"
               >
                 <div className="flex justify-between mb-3">
-                  <h3 className="text-xl text-zinc-200">
+                  <h3 className="text-xl text-zinc-200 font-semibold">
                     {subject.subjectName}
                   </h3>
-                  <span className="text-zinc-400">
-                    {
-                      summaryData.find(
-                        s => s.subjectName === subject.subjectName
-                      )?.count ?? 0
-                    }
+                  <span className="text-zinc-400 font-medium">
+                    {getSubjectTotal(subject)}
                   </span>
                 </div>
 
@@ -311,7 +361,36 @@ export default function SubjectPage() {
             ))}
           </div>
         )}
+
+        {/* Error Toast */}
+        {error && (
+          <div className="fixed bottom-4 right-4 bg-red-600 text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in">
+            <span>{error}</span>
+            <button 
+              onClick={() => setError('')}
+              className="text-white hover:text-gray-200 font-bold text-xl"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
+
+      <style jsx>{`
+        @keyframes slide-in {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
@@ -331,13 +410,20 @@ function CounterRow({
 }) {
   return (
     <div className="flex justify-between items-center mt-2">
-      <span className="text-zinc-400">{label}</span>
-      <div className="flex gap-2">
-        <button onClick={onDecrement} className="px-2 bg-zinc-700 rounded">
+      <span className="text-zinc-400 text-sm">{label}</span>
+      <div className="flex gap-2 items-center">
+        <button 
+          onClick={onDecrement} 
+          className="px-3 py-1 bg-zinc-700 rounded hover:bg-zinc-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          disabled={count <= 0}
+        >
           −
         </button>
-        <span className="w-8 text-center text-zinc-200">{count}</span>
-        <button onClick={onIncrement} className="px-2 bg-zinc-700 rounded">
+        <span className="w-10 text-center text-zinc-200 font-medium">{count}</span>
+        <button 
+          onClick={onIncrement} 
+          className="px-3 py-1 bg-zinc-700 rounded hover:bg-zinc-600 transition-colors"
+        >
           +
         </button>
       </div>

@@ -15,8 +15,9 @@ export async function PATCH(req: NextRequest): Promise<NextResponse<StanderedRes
     const _id = searchParams.get("_id");
     const type = searchParams.get("type");
     const action = searchParams.get("action");
+    const count = Number(searchParams.get("count") ||0 )
 
-    if (!_id || !type || !action) {
+    if (!_id || !type || !action  || count === 0) {
       return NextResponse.json({
         status: HttpStatusCode.BAD_REQUEST,
         success: false,
@@ -74,7 +75,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse<StanderedRes
     }
 
     // Build update query
-    const incrementValue = action === 'increment' ? 1 : -1;
+    const incrementValue = action === 'increment' ? count : -count;
     const updateQuery = {
       $inc: { [type]: incrementValue }
     };
