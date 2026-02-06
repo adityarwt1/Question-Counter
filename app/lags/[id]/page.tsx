@@ -5,6 +5,32 @@ import React, { Suspense, useEffect, useOptimistic, useState } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from "next/link";
 
+// Skeleton Loader Component for Chapters
+const ChapterSkeleton = () => {
+    return (
+        <div className='bg-card-bg p-4 rounded flex items-center justify-between animate-pulse'>
+            <div className='flex-1'>
+                <div className='h-6 bg-gray-700 rounded w-2/3'></div>
+            </div>
+            <div className='flex gap-2'>
+                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
+                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
+            </div>
+        </div>
+    )
+}
+
+// Multiple Skeleton Loaders
+const SkeletonLoader = ({ count = 3 }: { count?: number }) => {
+    return (
+        <div className='grid gap-4'>
+            {Array.from({ length: count }).map((_, index) => (
+                <ChapterSkeleton key={index} />
+            ))}
+        </div>
+    )
+}
+
 const LagChapterPage = ()=>{
     const params = useParams()
     const router = useRouter()
@@ -273,83 +299,83 @@ const LagChapterPage = ()=>{
                     </div>
                 )}
 
-                <div className='grid gap-4'>
-                    {isInitialLoading ? (
-                        <div className='text-center text-text py-8'>
-                            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
-                            Loading chapters...
-                        </div>
-                    ) : optimisticData && optimisticData.length > 0 ? (
-                        optimisticData.map((chapter) => {
-                            const id = typeof chapter._id == "string" ? chapter._id : chapter._id.toString()
-                            return (
-                                <div key={id} className='bg-card-bg p-4 rounded flex items-center justify-between cursor-pointer hover:bg-[#3a3a3a] transition-colors'>
-                                    {editingId === id ? (
-                                        <div className='flex-1 flex items-center gap-2'>
-                                            <input
-                                                type='text'
-                                                value={editingName}
-                                                onChange={(e) => setEditingName(e.target.value)}
-                                                onKeyDown={(e) => handleEditKeyDown(e, id)}
-                                                placeholder='Press Enter to save, Esc to cancel'
-                                                className='flex-1 p-2 bg-primary-bg text-text border border-text rounded'
-                                                autoFocus
-                                            />
-                                            <button
-                                                onClick={() => handleEditChapter(id)}
-                                                className='bg-button-bg text-button-text p-2 rounded'
-                                            >
-                                                <Save size={16} />
-                                            </button>
-                                            <button
-                                                onClick={cancelEdit}
-                                                className='bg-button-bg text-button-text p-2 rounded'
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <Link
-                                                href={`/lags/chapter/${id}` as any}
-                                                prefetch={isHover === id}
-                                                onMouseEnter={()=> setIsHover(id)}
-                                                className='flex-1 text-left text-text hover:text-white'
-                                            >
-                                                {chapter.chapterName}
-                                            </Link>
-                                            <div className='flex gap-2'>
+                {/* Replace loading spinner with skeleton */}
+                {isInitialLoading ? (
+                    <SkeletonLoader count={5} />
+                ) : (
+                    <div className='grid gap-4'>
+                        {optimisticData && optimisticData.length > 0 ? (
+                            optimisticData.map((chapter) => {
+                                const id = typeof chapter._id == "string" ? chapter._id : chapter._id.toString()
+                                return (
+                                    <div key={id} className='bg-card-bg p-4 rounded flex items-center justify-between cursor-pointer hover:bg-[#3a3a3a] transition-colors'>
+                                        {editingId === id ? (
+                                            <div className='flex-1 flex items-center gap-2'>
+                                                <input
+                                                    type='text'
+                                                    value={editingName}
+                                                    onChange={(e) => setEditingName(e.target.value)}
+                                                    onKeyDown={(e) => handleEditKeyDown(e, id)}
+                                                    placeholder='Press Enter to save, Esc to cancel'
+                                                    className='flex-1 p-2 bg-primary-bg text-text border border-text rounded'
+                                                    autoFocus
+                                                />
                                                 <button
-                                                    onClick={() => startEdit(id, chapter.chapterName)}
+                                                    onClick={() => handleEditChapter(id)}
                                                     className='bg-button-bg text-button-text p-2 rounded'
                                                 >
-                                                    <Edit2 size={16} />
+                                                    <Save size={16} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteChapter(id)}
+                                                    onClick={cancelEdit}
                                                     className='bg-button-bg text-button-text p-2 rounded'
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <X size={16} />
                                                 </button>
                                             </div>
-                                        </>
-                                    )}
-                                </div>
-                            )
-                        })
-                    ) : (
-                        <div className='text-center text-text py-8'>
-                            <p className='mb-4'>No chapters found for this subject. Add your first chapter!</p>
-                            <button
-                                onClick={() => setIsAdding(true)}
-                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
-                            >
-                                <Plus size={16} />
-                                Add Your First Chapter
-                            </button>
-                        </div>
-                    )}
-                </div>
+                                        ) : (
+                                            <>
+                                                <Link
+                                                    href={`/lags/chapter/${id}` as any}
+                                                    prefetch={isHover === id}
+                                                    onMouseEnter={()=> setIsHover(id)}
+                                                    className='flex-1 text-left text-text hover:text-white'
+                                                >
+                                                    {chapter.chapterName}
+                                                </Link>
+                                                <div className='flex gap-2'>
+                                                    <button
+                                                        onClick={() => startEdit(id, chapter.chapterName)}
+                                                        className='bg-button-bg text-button-text p-2 rounded'
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteChapter(id)}
+                                                        className='bg-button-bg text-button-text p-2 rounded'
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )
+                            })
+                        ) : (
+                            <div className='text-center text-text py-8'>
+                                <p className='mb-4'>No chapters found for this subject. Add your first chapter!</p>
+                                <button
+                                    onClick={() => setIsAdding(true)}
+                                    className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
+                                >
+                                    <Plus size={16} />
+                                    Add Your First Chapter
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Pagination & Limit Controller */}
                 <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-card-bg p-3 rounded border border-gray-800'>
@@ -391,7 +417,7 @@ const LagChapterPage = ()=>{
                             <ChevronRight size={24} />
                         </button>
                     </div>
-                    </div>
+                </div>
             </div>
         </div>
     )
@@ -399,7 +425,20 @@ const LagChapterPage = ()=>{
 
 const LagChapterPageContent = ()=>{
     return (
-        <Suspense fallback={<><div>Loading...</div></>}>
+        <Suspense fallback={
+            <div className='w-full bg-primary-bg min-h-screen flex flex-col items-center p-4'>
+                <div className='w-full max-w-4xl'>
+                    <div className='flex items-center gap-4 mb-4'>
+                        <div className='bg-gray-700 p-2 rounded w-10 h-10 animate-pulse'></div>
+                        <div className='h-8 bg-gray-700 rounded w-32 animate-pulse'></div>
+                    </div>
+                    <div className='flex justify-end mb-4'>
+                        <div className='bg-gray-700 rounded h-10 w-36 animate-pulse'></div>
+                    </div>
+                    <SkeletonLoader count={5} />
+                </div>
+            </div>
+        }>
             <LagChapterPage/>
         </Suspense>
     )

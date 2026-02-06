@@ -5,6 +5,32 @@ import React, { Suspense, useEffect, useOptimistic, useState, useTransition } fr
 import { Plus, Edit2, Trash2, Save, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 
+// Skeleton Loader Component
+const SubjectSkeleton = () => {
+    return (
+        <div className='bg-card-bg p-4 rounded flex items-center justify-between animate-pulse'>
+            <div className='flex-1'>
+                <div className='h-6 bg-gray-700 rounded w-3/4'></div>
+            </div>
+            <div className='flex gap-2'>
+                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
+                <div className='bg-gray-700 p-2 rounded w-9 h-9'></div>
+            </div>
+        </div>
+    )
+}
+
+// Multiple Skeleton Loaders
+const SkeletonLoader = ({ count = 3 }: { count?: number }) => {
+    return (
+        <div className='grid gap-4'>
+            {Array.from({ length: count }).map((_, index) => (
+                <SubjectSkeleton key={index} />
+            ))}
+        </div>
+    )
+}
+
 const LagPage = ()=>{
     const [lagData, setLagData] = useState<LagResponseDataInterface[]>([])
     const [page, setPage] = useState(1)
@@ -263,88 +289,88 @@ const LagPage = ()=>{
                     </div>
                 )}
 
-                <div className={`grid gap-4 ${isPending ? 'opacity-60' : ''}`}>
-                    {isInitialLoading ? (
-                        <div className='text-center text-text py-8'>
-                            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
-                            Loading subjects...
-                        </div>
-                    ) : optimisticData && optimisticData.length > 0 ? (
-                        optimisticData.map((subject) => {
-                            const idString = typeof subject._id === "string" ? subject._id : subject._id.toString();
-                            return (
-                                <div key={idString} className='bg-card-bg p-4 rounded flex items-center justify-between cursor-pointer hover:bg-[#3a3a3a] transition-colors'>
-                                    {editingId === idString ? (
-                                        <div className='flex-1 flex items-center gap-2'>
-                                            <input
-                                                type='text'
-                                                value={editingName}
-                                                onChange={(e) => setEditingName(e.target.value)}
-                                                onKeyDown={(e) => handleEditKeyDown(e, idString)}
-                                                placeholder='Press Enter to save, Esc to cancel'
-                                                className='flex-1 p-2 bg-primary-bg text-text border border-text rounded'
-                                                disabled={isPending}
-                                                autoFocus
-                                            />
-                                            <button
-                                                onClick={() => handleEditSubject(idString)}
-                                                disabled={isLoading || isPending}
-                                                className='bg-button-bg text-button-text p-2 rounded disabled:opacity-50'
-                                            >
-                                                <Save size={16} />
-                                            </button>
-                                            <button
-                                                onClick={cancelEdit}
-                                                className='bg-button-bg text-button-text p-2 rounded'
-                                                disabled={isPending}
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <Link
-                                                href={`/lags/${idString}`}
-                                                prefetch={true}
-                                                className='flex-1 text-left text-text hover:text-white'
-                                            >
-                                                {subject.subjectName}
-                                            </Link>
-                                            <div className='flex gap-2'>
-                                                <button
-                                                    onClick={() => startEdit(idString, subject.subjectName)}
-                                                    className='bg-button-bg text-button-text p-2 rounded'
+                {/* Replace loading spinner with skeleton */}
+                {isInitialLoading ? (
+                    <SkeletonLoader count={5} />
+                ) : (
+                    <div className={`grid gap-4 ${isPending ? 'opacity-60' : ''}`}>
+                        {optimisticData && optimisticData.length > 0 ? (
+                            optimisticData.map((subject) => {
+                                const idString = typeof subject._id === "string" ? subject._id : subject._id.toString();
+                                return (
+                                    <div key={idString} className='bg-card-bg p-4 rounded flex items-center justify-between cursor-pointer hover:bg-[#3a3a3a] transition-colors'>
+                                        {editingId === idString ? (
+                                            <div className='flex-1 flex items-center gap-2'>
+                                                <input
+                                                    type='text'
+                                                    value={editingName}
+                                                    onChange={(e) => setEditingName(e.target.value)}
+                                                    onKeyDown={(e) => handleEditKeyDown(e, idString)}
+                                                    placeholder='Press Enter to save, Esc to cancel'
+                                                    className='flex-1 p-2 bg-primary-bg text-text border border-text rounded'
                                                     disabled={isPending}
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
+                                                    autoFocus
+                                                />
                                                 <button
-                                                    onClick={() => handleDeleteSubject(idString)}
+                                                    onClick={() => handleEditSubject(idString)}
                                                     disabled={isLoading || isPending}
                                                     className='bg-button-bg text-button-text p-2 rounded disabled:opacity-50'
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Save size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={cancelEdit}
+                                                    className='bg-button-bg text-button-text p-2 rounded'
+                                                    disabled={isPending}
+                                                >
+                                                    <X size={16} />
                                                 </button>
                                             </div>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className='text-center text-text py-8'>
-                            <p className='mb-4'>No subjects found. Start by adding your first subject!</p>
-                            <button
-                                onClick={() => setIsAdding(true)}
-                                className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
-                                disabled={isPending}
-                            >
-                                <Plus size={16} />
-                                Add Your First Subject
-                            </button>
-                        </div>
-                    )}
-                </div>
+                                        ) : (
+                                            <>
+                                                <Link
+                                                    href={`/lags/${idString}`}
+                                                    prefetch={true}
+                                                    className='flex-1 text-left text-text hover:text-white'
+                                                >
+                                                    {subject.subjectName}
+                                                </Link>
+                                                <div className='flex gap-2'>
+                                                    <button
+                                                        onClick={() => startEdit(idString, subject.subjectName)}
+                                                        className='bg-button-bg text-button-text p-2 rounded'
+                                                        disabled={isPending}
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteSubject(idString)}
+                                                        disabled={isLoading || isPending}
+                                                        className='bg-button-bg text-button-text p-2 rounded disabled:opacity-50'
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className='text-center text-text py-8'>
+                                <p className='mb-4'>No subjects found. Start by adding your first subject!</p>
+                                <button
+                                    onClick={() => setIsAdding(true)}
+                                    className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2 mx-auto'
+                                    disabled={isPending}
+                                >
+                                    <Plus size={16} />
+                                    Add Your First Subject
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Pagination & Limit Controller */}
                 <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 bg-card-bg p-3 rounded border border-gray-800'>
@@ -395,7 +421,7 @@ const LagPage = ()=>{
 
 const LagPageContent = ()=>{
     return (
-        <Suspense fallback={<><div>Loading...</div></>}>
+        <Suspense fallback={<SkeletonLoader count={5} />}>
             <LagPage></LagPage>
         </Suspense>
     )

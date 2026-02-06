@@ -15,6 +15,34 @@ declare global {
     }
 }
 
+// Skeleton Loader Component for Lag Points
+const LagPointSkeleton = () => {
+    return (
+        <div className='bg-card-bg p-4 rounded border border-transparent animate-pulse'>
+            <div className='mb-4 space-y-2'>
+                <div className='h-5 bg-[#252525] rounded w-full border-2 border-white/10'></div>
+                <div className='h-5 bg-[#252525]  rounded w-5/6 border-2 border-white/10'></div>
+                <div className='h-5 bg-[#252525]  rounded w-4/6 border-2 border-white/10'></div>
+            </div>
+            <div className='flex gap-3 border-t border-[#252525] pt-3'>
+                <div className='h-5 bg-[#252525]  rounded w-16 border-2  border-white/10'></div>
+                <div className='h-5 bg-[#252525] rounded w-16  border-2 border-white/10'></div>
+            </div>
+        </div>
+    )
+}
+
+// Multiple Skeleton Loaders
+const SkeletonLoader = ({ count = 3 }: { count?: number }) => {
+    return (
+        <div className='grid gap-4'>
+            {Array.from({ length: count }).map((_, index) => (
+                <LagPointSkeleton key={index} />
+            ))}
+        </div>
+    )
+}
+
 const ChapterBodyPage = () => {
     const [data, setData] = useState<ChapterBody[]>([])
     const params = useParams()
@@ -360,9 +388,6 @@ const ChapterBodyPage = () => {
                     )}
                 </form>
 
-                {/* Math Syntax Help */}
-              
-
                 <div className='flex justify-end mb-4'>
                     <button
                         onClick={() => setIsAdding(!isAdding)}
@@ -390,66 +415,66 @@ const ChapterBodyPage = () => {
                     </div>
                 )}
 
-                <div className='grid gap-4'>
-                    {isInitialLoading ? (
-                        <div className='text-center text-text py-8'>
-                            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4'></div>
-                            Loading...
-                        </div>
-                    ) : optimisticData && optimisticData.length > 0 ? (
-                        optimisticData.map((item) => (
-                            <div key={item._id} className='bg-card-bg p-4 rounded border border-transparent hover:border-gray-700 transition-all'>
-                                {editingId === item._id ? (
-                                    <div>
-                                        <textarea
-                                            value={editingBody}
-                                            onChange={(e) => setEditingBody(e.target.value)}
-                                            placeholder='Use $ for inline math or $$ for display math'
-                                            className='w-full p-2 bg-primary-bg text-text border border-text rounded'
-                                            rows={4}
-                                            autoFocus
-                                        />
-                                        <div className='flex gap-2 mt-2'>
-                                            <button onClick={() => handleEditBody(item._id)} className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'><Save size={16} /> Save</button>
-                                            <button onClick={() => setEditingId(null)} className='bg-gray-700 text-text px-4 py-2 rounded flex items-center gap-2'><X size={16} /> Cancel</button>
+                {/* Replace loading spinner with skeleton */}
+                {isInitialLoading ? (
+                    <SkeletonLoader count={5} />
+                ) : (
+                    <div className='grid gap-4'>
+                        {optimisticData && optimisticData.length > 0 ? (
+                            optimisticData.map((item) => (
+                                <div key={item._id} className='bg-card-bg p-4 rounded border border-transparent hover:border-gray-700 transition-all'>
+                                    {editingId === item._id ? (
+                                        <div>
+                                            <textarea
+                                                value={editingBody}
+                                                onChange={(e) => setEditingBody(e.target.value)}
+                                                placeholder='Use $ for inline math or $$ for display math'
+                                                className='w-full p-2 bg-primary-bg text-text border border-text rounded'
+                                                rows={4}
+                                                autoFocus
+                                            />
+                                            <div className='flex gap-2 mt-2'>
+                                                <button onClick={() => handleEditBody(item._id)} className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'><Save size={16} /> Save</button>
+                                                <button onClick={() => setEditingId(null)} className='bg-gray-700 text-text px-4 py-2 rounded flex items-center gap-2'><X size={16} /> Cancel</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content'>
-                                            {item.body}
+                                    ) : (
+                                        <div>
+                                            <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content'>
+                                                {item.body}
+                                            </div>
+                                            <div className='flex gap-3 border-t border-gray-800 pt-3'>
+                                                <button
+                                                    onClick={() => startEdit(item._id, item.body)}
+                                                    className='text-gray-400 hover:text-button-bg flex items-center gap-1 text-sm transition-colors'
+                                                >
+                                                    <Edit2 size={14} /> Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirmId(item._id)}
+                                                    className='text-gray-400 hover:text-red-500 flex items-center gap-1 text-sm transition-colors'
+                                                >
+                                                    <Trash2 size={14} /> Delete
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className='flex gap-3 border-t border-gray-800 pt-3'>
-                                            <button
-                                                onClick={() => startEdit(item._id, item.body)}
-                                                className='text-gray-400 hover:text-button-bg flex items-center gap-1 text-sm transition-colors'
-                                            >
-                                                <Edit2 size={14} /> Edit
-                                            </button>
-                                            <button
-                                                onClick={() => setDeleteConfirmId(item._id)}
-                                                className='text-gray-400 hover:text-red-500 flex items-center gap-1 text-sm transition-colors'
-                                            >
-                                                <Trash2 size={14} /> Delete
-                                            </button>
-                                        </div>
-                                    </div>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className='text-center text-text py-12 bg-card-bg rounded-lg border border-dashed border-gray-700'>
+                                <p className='mb-4 opacity-60'>
+                                    {searchQuery ? `No results found for "${searchQuery}"` : 'No lag points found.'}
+                                </p>
+                                {!searchQuery && (
+                                    <button onClick={() => setIsAdding(true)} className='bg-button-bg text-button-text px-4 py-2 rounded inline-flex items-center gap-2'>
+                                        <Plus size={16} /> Add First Point
+                                    </button>
                                 )}
                             </div>
-                        ))
-                    ) : (
-                        <div className='text-center text-text py-12 bg-card-bg rounded-lg border border-dashed border-gray-700'>
-                            <p className='mb-4 opacity-60'>
-                                {searchQuery ? `No results found for "${searchQuery}"` : 'No lag points found.'}
-                            </p>
-                            {!searchQuery && (
-                                <button onClick={() => setIsAdding(true)} className='bg-button-bg text-button-text px-4 py-2 rounded inline-flex items-center gap-2'>
-                                    <Plus size={16} /> Add First Point
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Pagination */}
                 <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 border-t border-gray-800 pt-6'>
@@ -489,7 +514,23 @@ const ChapterBodyPage = () => {
 
 const ChapterBodyContent = () => {
     return (
-        <Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-primary-bg text-text">Loading Layout...</div>}>
+        <Suspense fallback={
+            <div className='w-full bg-primary-bg min-h-screen flex flex-col items-center p-4'>
+                <div className='w-full max-w-4xl'>
+                    <div className='flex items-center gap-4 mb-4'>
+                        <div className='bg-gray-700 p-2 rounded w-10 h-10 animate-pulse'></div>
+                        <div className='h-8 bg-gray-700 rounded w-32 animate-pulse'></div>
+                    </div>
+                    <div className='mb-4'>
+                        <div className='h-10 bg-gray-700 rounded w-full animate-pulse'></div>
+                    </div>
+                    <div className='flex justify-end mb-4'>
+                        <div className='bg-gray-700 rounded h-10 w-40 animate-pulse'></div>
+                    </div>
+                    <SkeletonLoader count={5} />
+                </div>
+            </div>
+        }>
             <ChapterBodyPage />
         </Suspense>
     )
