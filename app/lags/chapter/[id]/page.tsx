@@ -90,9 +90,12 @@ const LagPointSkeleton = () => {
                 <div className='h-4 bg-[#252525]  w-5/6 border-2 border-white/10 rounded-full'></div>
                 <div className='h-4 bg-[#252525]  w-4/6 border-2 border-white/10 rounded-full'></div>
             </div>
-            <div className='flex gap-3 border-t border-[#252525] pt-3'>
-                <div className='h-5 bg-[#252525]  rounded w-16 border-2  border-white/10'></div>
-                <div className='h-5 bg-[#252525] rounded w-16  border-2 border-white/10'></div>
+            <div className='flex justify-between items-center border-t border-[#252525] pt-3'>
+                <div className='flex gap-3'>
+                    <div className='h-5 bg-[#252525]  rounded w-16 border-2  border-white/10'></div>
+                    <div className='h-5 bg-[#252525] rounded w-16  border-2 border-white/10'></div>
+                </div>
+                <div className='h-6 bg-[#252525] rounded w-20 border-2 border-white/10'></div>
             </div>
         </div>
     )
