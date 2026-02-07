@@ -26,4 +26,5 @@
 });
     const data  = await reponose.json()
     console.log(data)
+    console.log('Hellow ')
 })()

@@ -6,6 +6,7 @@ import { mongoconnect } from "@/lib/mongodb";
 import LagBody from "@/models/lag/LagBody";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
+import {LagType} from "@/types/lagType"
 
 export async function GET(req: NextRequest): Promise<NextResponse<LagChapterInterface>> {
     try {
@@ -83,12 +84,14 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
             return Unauthorized()
         }
 
-        const {_id, body} = await req.json()
+        const {_id, body, type} = await req.json()
 
-        if(!_id || !body){
+
+        if(!_id || !body || !type){
             return BadRequest("lagChapterId and body not provided!")
         }
 
+        
         const isConenected = await mongoconnect()
 
         if(!isConenected){
@@ -96,7 +99,8 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
         }
         const data = await LagBody.create({
             lagChapterId:_id,
-            body
+            body,
+            type
         })
 
         if(!data){
@@ -109,6 +113,7 @@ export async function POST(req:NextRequest):Promise<NextResponse<StanderedRespon
             data:{
                 _id:data._id,
                 body:data.body,
+                type:data.type
             }
         },{
             status:HttpStatusCode.CREATED
@@ -196,3 +201,4 @@ export async function DELETE(req:NextRequest) :Promise<NextResponse<StanderedRes
         return InternalServerIssue(error)
     }
 }
+

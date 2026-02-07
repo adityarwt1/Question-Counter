@@ -24,8 +24,17 @@ export default function SignInPage() {
     setIsLoading(true);
     setError('');
     setSuccess(false);
-
-    try {
+    if(!formData.email || !formData.password ){
+      setError("Please provide following details first!")
+      setIsLoading(false)
+      return 
+    }
+    if(!formData.email.includes('@' )){
+      setError("please enter valid email address!")
+      setIsLoading(false)
+      return
+    }
+    try { 
       const response = await fetch('/api/v1/signin', {
         method: 'POST',
         headers: {
