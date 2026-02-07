@@ -156,6 +156,24 @@ const ChapterBodyPage = () => {
         }
     )
 
+    // Add global styles for scrollbar hiding
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        `;
+        document.head.appendChild(style);
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
+
     // Load MathJax dynamically
     useEffect(() => {
         const loadMathJax = () => {
@@ -520,7 +538,7 @@ const ChapterBodyPage = () => {
 
                 {/* Search Bar and Filter */}
                 <div className='mb-4 space-y-3'>
-                    <form onSubmit={handleSearch} className='flex gap-2'>
+                    <form onSubmit={handleSearch} className='flex flex-col sm:flex-row gap-2'>
                         <div className='relative flex-1'>
                             <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400' size={20} />
                             <input
@@ -531,22 +549,24 @@ const ChapterBodyPage = () => {
                                 className='w-full pl-10 pr-4 py-2 bg-card-bg text-text border border-gray-700 rounded focus:border-button-bg outline-none'
                             />
                         </div>
-                        <button
-                            type='submit'
-                            className='bg-button-bg text-button-text px-6 py-2 rounded hover:bg-opacity-80 transition-colors'
-                            disabled={isSearching}
-                        >
-                            {isSearching ? 'Searching...' : 'Search'}
-                        </button>
-                        {searchQuery && (
+                        <div className='flex gap-2'>
                             <button
-                                type='button'
-                                onClick={handleClearSearch}
-                                className='bg-gray-700 text-text px-4 py-2 rounded hover:bg-gray-600 transition-colors'
+                                type='submit'
+                                className='flex-1 sm:flex-initial bg-button-bg text-button-text px-6 py-2 rounded hover:bg-opacity-80 transition-colors'
+                                disabled={isSearching}
                             >
-                                Clear
+                                {isSearching ? 'Searching...' : 'Search'}
                             </button>
-                        )}
+                            {searchQuery && (
+                                <button
+                                    type='button'
+                                    onClick={handleClearSearch}
+                                    className='flex-1 sm:flex-initial bg-gray-700 text-text px-4 py-2 rounded hover:bg-gray-600 transition-colors'
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
                     </form>
 
                     {/* Filter Dropdown */}
@@ -621,12 +641,12 @@ const ChapterBodyPage = () => {
                         {/* Type Selection */}
                         <div className='mb-3'>
                             <label className='text-sm text-gray-400 mb-2 block'>Type</label>
-                            <div className='flex flex-wrap gap-2'>
+                            <div className='flex overflow-x-auto gap-2 pb-2 scrollbar-hide'>
                                 {(Object.keys(typeColors) as LagType[]).map((type) => (
                                     <button
                                         key={type}
                                         onClick={() => setNewType(type)}
-                                        className={`px-3 py-1.5 rounded text-sm transition-all ${
+                                        className={`px-3 py-1.5 rounded text-sm transition-all whitespace-nowrap shrink-0 ${
                                             newType === type
                                                 ? `${typeColors[type].badge} ring-2 ring-offset-2 ring-offset-card-bg ${typeColors[type].border.replace('border-', 'ring-')}`
                                                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -646,7 +666,7 @@ const ChapterBodyPage = () => {
                             rows={4}
                             autoFocus
                         />
-                        <div className='flex gap-2 mt-2'>
+                        <div className='flex gap-2 mt-2 flex-wrap'>
                             <button onClick={handleAddBody} className='bg-button-bg text-button-text px-4 py-2 rounded'>Add</button>
                             <button onClick={() => { setIsAdding(false); setNewType('question'); }} className='bg-gray-700 text-text px-4 py-2 rounded'>Cancel</button>
                         </div>
@@ -669,12 +689,12 @@ const ChapterBodyPage = () => {
                                             {/* Type Selection in Edit Mode */}
                                             <div className='mb-3'>
                                                 <label className='text-sm text-gray-400 mb-2 block'>Type</label>
-                                                <div className='flex flex-wrap gap-2'>
+                                                <div className='flex overflow-x-auto gap-2 pb-2 scrollbar-hide'>
                                                     {(Object.keys(typeColors) as LagType[]).map((type) => (
                                                         <button
                                                             key={type}
                                                             onClick={() => setEditingType(type)}
-                                                            className={`px-3 py-1.5 rounded text-sm transition-all ${
+                                                            className={`px-3 py-1.5 rounded text-sm transition-all whitespace-nowrap shrink-0 ${
                                                                 editingType === type
                                                                     ? `${typeColors[type].badge} ring-2 ring-offset-2 ring-offset-card-bg ${typeColors[type].border.replace('border-', 'ring-')}`
                                                                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -694,17 +714,17 @@ const ChapterBodyPage = () => {
                                                 rows={4}
                                                 autoFocus
                                             />
-                                            <div className='flex gap-2 mt-2'>
+                                            <div className='flex gap-2 mt-2 flex-wrap'>
                                                 <button onClick={() => handleEditBody(item._id)} className='bg-button-bg text-button-text px-4 py-2 rounded flex items-center gap-2'><Save size={16} /> Save</button>
                                                 <button onClick={() => setEditingId(null)} className='bg-gray-700 text-text px-4 py-2 rounded flex items-center gap-2'><X size={16} /> Cancel</button>
                                             </div>
                                         </div>
                                     ) : (
                                         <div>
-                                            <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content'>
+                                            <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content wrap-break-word overflow-hidden'>
                                                 {item.body}
                                             </div>
-                                            <div className='flex justify-between items-center border-t border-gray-800 pt-3'>
+                                            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-t border-gray-800 pt-3'>
                                                 <div className='flex gap-3'>
                                                     <button
                                                         onClick={() => startEdit(item._id, item.body, item.type)}
@@ -735,7 +755,7 @@ const ChapterBodyPage = () => {
                                                     
                                                     {/* Type Change Dropdown */}
                                                     {activeTypeDropdown === item._id && (
-                                                        <div className='absolute bottom-full right-0 mb-2 bg-card-bg border border-gray-700 rounded-lg shadow-xl z-20 min-w-35 backdrop-blur-sm'>
+                                                        <div className='absolute bottom-full left-0 sm:left-auto sm:right-0 mb-2 bg-card-bg border border-gray-700 rounded-lg shadow-xl z-20 min-w-35 max-w-50 backdrop-blur-sm'>
                                                             {(Object.keys(typeColors) as LagType[]).map((type) => (
                                                                 <button
                                                                     key={type}
