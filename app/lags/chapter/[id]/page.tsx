@@ -167,6 +167,16 @@ const ChapterBodyPage = () => {
                 -ms-overflow-style: none;
                 scrollbar-width: none;
             }
+            .math-content {
+                word-wrap: break-word;
+                overflow-wrap: anywhere;
+                hyphens: auto;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .overflow-wrap-anywhere {
+                overflow-wrap: anywhere;
+            }
         `;
         document.head.appendChild(style);
         return () => {
@@ -682,7 +692,7 @@ const ChapterBodyPage = () => {
                             optimisticData.map((item) => (
                                 <div 
                                     key={item._id} 
-                                    className={`bg-card-bg p-4 rounded border transition-all ${getItemBorderClass(item.type)} ${getItemBgClass(item.type)}`}
+                                    className={`bg-card-bg p-4 rounded border transition-all  ${getItemBorderClass(item.type)} ${getItemBgClass(item.type)}`}
                                 >
                                     {editingId === item._id ? (
                                         <div>
@@ -721,7 +731,7 @@ const ChapterBodyPage = () => {
                                         </div>
                                     ) : (
                                         <div>
-                                            <div className='text-text mb-4 whitespace-pre-wrap leading-relaxed math-content wrap-break-word overflow-hidden'>
+                                            <div className='text-text mb-4 leading-relaxed math-content wrap-break-word overflow-wrap-anywhere max-w-full'>
                                                 {item.body}
                                             </div>
                                             <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-t border-gray-800 pt-3'>
