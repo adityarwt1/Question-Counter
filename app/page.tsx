@@ -193,7 +193,7 @@ export default function SubjectPage() {
         pendingUpdates.current.delete(key);
       }
       debounceTimers.current.delete(key);
-    }, 500);
+    }, 2000);
 
     debounceTimers.current.set(key, timer);
   }, [subjects]);
