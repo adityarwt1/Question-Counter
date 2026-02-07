@@ -43,7 +43,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<StanderedRespo
         }
 
         // 3. If a type filter exists, add it to match criteria
-        if (typeFilter && ["question", "formula", "theory", "approach", "mistake", "learning", "trick"].includes(typeFilter)) {
+        if (typeFilter && ["question", "formula", "theory", "approach", "mistake", "learning", "trick", "revisit"].includes(typeFilter)) {
             matchCriteria.type = typeFilter;
         }
 

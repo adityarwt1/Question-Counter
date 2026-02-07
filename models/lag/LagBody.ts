@@ -12,7 +12,7 @@ const LagBodySchema: Schema<LagBodyDocument> = new Schema(
     lagChapterId: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: "LagChapter", // (optional but good practice)
+      ref: "LagChapter",
     },
     body: {
       type: String,
@@ -20,7 +20,7 @@ const LagBodySchema: Schema<LagBodyDocument> = new Schema(
     },
     type: {
       type: String,
-      enum: ["question", "formula", "theory", "approach", "mistake", "learning", "trick"],
+      enum: ["question", "formula", "theory", "approach", "mistake", "learning", "trick", "revisit"],
       required: true,
     },
   },

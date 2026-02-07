@@ -3,7 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useOptimistic, useState, startTransition } from "react";
 import { Plus, Edit2, Trash2, Save, X, ArrowLeft, AlertTriangle, Search, Filter } from 'lucide-react'
 
-type LagType = "question" | "formula" | "theory" | "approach" | "mistake" | "learning" | "trick"
+type LagType = "question" | "formula" | "theory" | "approach" | "mistake" | "learning" | "trick" | "revisit"
 
 interface ChapterBody {
     _id: string
@@ -61,6 +61,12 @@ const typeColors: Record<LagType, { bg: string; border: string; text: string; ba
         border: 'border-pink-500/30', 
         text: 'text-pink-400',
         badge: 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+    },
+    revisit: { 
+        bg: 'bg-orange-500/10 hover:bg-orange-500/20', 
+        border: 'border-orange-500/30', 
+        text: 'text-orange-400',
+        badge: 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
     }
 }
 
@@ -71,7 +77,8 @@ const typeLabels: Record<LagType, string> = {
     approach: "Approach",
     mistake: "Mistake",
     learning: "Learning",
-    trick: "Trick"
+    trick: "Trick",
+    revisit: "Revisit"
 }
 
 // Skeleton Loader Component for Lag Points

@@ -1,1 +1,1 @@
-export type LagType = "question" | "formula" | "theory" | "approach" | "mistake" | "learning" | "trick"
+export type LagType = "question" | "formula" | "theory" | "approach" | "mistake" | "learning" | "trick" | "revisit"
